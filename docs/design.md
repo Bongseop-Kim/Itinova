@@ -94,7 +94,9 @@
 
 ### 2.4 여행 내부 — 하단 탭 4개
 
-`/trip/[id]/_layout` = Tabs. 트리플의 5탭에서 `배낭톡`(커뮤니티)만 제거한 구조.
+트리플의 5탭에서 `배낭톡`(커뮤니티)만 제거한 구조.
+
+`/trip/[id]/_layout` = **Stack**이고, 탭은 그 안의 `(tabs)` 라우트 그룹에만 있다. 그룹명은 URL에 나타나지 않으므로 경로는 아래 표 그대로다. 이렇게 두는 이유는 두 가지다 — ① 와이어프레임상 S13~S21에는 탭바가 없다(서브 화면은 탭 위로 push되어 탭바를 덮는다) ② expo-router 57에서 탭바에서 화면을 빼는 `href: null`이 타입(`href?: string`)과 맞지 않는다.
 
 | # | 경로 | 탭 | 핵심 요소 | 주요 액션 | 레퍼런스 |
 | --- | --- | --- | --- | --- | --- |
@@ -142,7 +144,8 @@ app/
 ├── onboarding.tsx                 S22 온보딩 (step 1~3)
 ├── settings.tsx                   S02 앱 설정
 ├── create/
-│   ├── index.tsx                  S03 생성 방식 (presentation: modal)
+│   ├── _layout.tsx                Stack (루트에서 presentation: modal)
+│   ├── index.tsx                  S03 생성 방식
 │   ├── destination.tsx            S04
 │   ├── dates.tsx                  S05
 │   └── style.tsx                  S06
@@ -153,11 +156,13 @@ app/
 │   └── [placeId].tsx              S20
 └── trip/
     └── [id]/
-        ├── _layout.tsx            Tabs (여행홈·일정·저장·도구)
-        ├── index.tsx              S09
-        ├── itinerary.tsx          S10
-        ├── saved.tsx              S11
-        ├── tools.tsx              S12
+        ├── _layout.tsx            Stack
+        ├── (tabs)/
+        │   ├── _layout.tsx        Tabs (여행 홈·일정·저장·도구)
+        │   ├── index.tsx          S09
+        │   ├── itinerary.tsx      S10
+        │   ├── saved.tsx          S11
+        │   └── tools.tsx          S12
         ├── map.tsx                S13
         ├── edit.tsx               S14
         ├── add-place.tsx          S15
@@ -534,5 +539,8 @@ app-01(Wanderlog)에서 차용한 것: `58` AI 어시스턴트 → S19, `63`/`65
    - 캔버스: https://claude.ai/code/artifact/df0759f4-5614-4c3b-a123-bf4562c22317
    - 작업 파일: `docs/wireframes/build.mjs` (`.dc.html` 35개를 여기서 생성). 수정은 이 파일에서 하고 `node build.mjs` → 재발행
 3. ~~`db/schema.ts` 작성 → `npm run db:generate`~~ — 9테이블, `drizzle/20260904083241_fancy_songbird`
-4. 라우트 골격 (§2.8 트리 그대로 22파일 + 탭 레이아웃)
-5. S10 일정 보드부터 구현. 시각은 `docs/design-system.md` 토큰 적용
+4. ~~라우트 골격~~ — 화면 22 + 레이아웃 4 (`app/_layout` · `create/_layout` · `trip/[id]/_layout` · `trip/[id]/(tabs)/_layout`) + 임시 껍데기 `components/Screen.tsx`
+   - 골격 단계는 네이티브 헤더를 켜둔다 (뒤로가기·타이틀이 공짜). 5단계에서 화면별로 끈다
+   - `expo-router` 57 주의: `Tabs`를 `'expo-router'`에서 import하면 deprecated → `'expo-router/js-tabs'`
+   - 마이그레이션 실행(`useMigrations`)은 아직 붙이지 않았다. DB를 읽는 첫 화면에서 넣는다
+5. S10 일정 보드부터 구현. 시각은 `docs/design-system.md` 토큰 적용. 구현하는 파일에서 `Screen` 껍데기를 걷어낸다
