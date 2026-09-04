@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f4f4;font:400 13px/1.45 -apple-system,'Helvetica Neue',system-ui,sans-serif;color:#333;-webkit-font-smoothing:antialiased}
+a{color:#333}a:hover{color:#000}
+.fr{display:flex;flex-direction:column;min-height:100vh;background:#f4f4f4}
+.rt{flex:none;padding:7px 12px 6px;font:500 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#8d8d8d;letter-spacing:.01em}
+.ph{flex:1;display:flex;flex-direction:column;background:#fff;border-top:1px solid #dcdcdc;overflow:hidden}
+.hd{flex:none;display:flex;align-items:center;gap:10px;min-height:52px;padding:10px 16px;border-bottom:1px solid #ececec}
+.hd .t{font-size:15px;font-weight:600;flex-grow:1}
+.act{font-size:12px;font-weight:600;color:#666;flex:none}
+.ic{flex:none;min-width:30px;height:30px;padding:0 5px;border:1px solid #d2d2d2;border-radius:5px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:9px;color:#8d8d8d}
+.bd{flex:1;display:flex;flex-direction:column;gap:12px;padding:14px 16px}
+.box{background:#e8e8e8;border:1px solid #d4d4d4;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#7a7a7a;font-size:11px;line-height:1.4;text-align:center;padding:8px}
+.row{display:flex;align-items:center;gap:10px;min-height:44px;background:#fff;border:1px solid #e2e2e2;border-radius:6px;padding:8px 12px;font-size:12px}
+.row .g{flex-grow:1}
+.set{display:flex;flex-direction:column;gap:8px}
+.hs{display:flex;gap:8px}
+.wr{display:flex;flex-wrap:wrap;gap:8px}
+.lb{font-size:11px;font-weight:700;color:#9a9a9a;letter-spacing:.04em}
+.q{font-size:16px;font-weight:600;color:#2b2b2b;line-height:1.35}
+.mut{color:#9a9a9a;font-size:11px;line-height:1.45}
+.chip{display:flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid #d2d2d2;border-radius:999px;font-size:11px;color:#666;background:#f7f7f7}
+.chip.on{background:#333;border-color:#333;color:#fff}
+.xs{flex:none;min-height:32px;display:flex;align-items:center;padding:0 9px;border:1px solid #d2d2d2;border-radius:5px;font-size:10px;color:#7a7a7a;background:#fafafa}
+.cta{flex:none;margin:0 16px 16px;min-height:48px;border-radius:8px;background:#333;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.btn{flex-grow:1;min-height:44px;border:1px solid #d2d2d2;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#555;background:#fafafa}
+.bar{flex:none;display:flex;gap:8px;padding:10px 16px 16px;border-top:1px solid #ececec}
+.sg{flex:none;display:flex;border-bottom:1px solid #ececec}
+.sg div{flex-grow:1;text-align:center;padding:13px 4px;font-size:12px;color:#a8a8a8}
+.sg div.on{color:#333;font-weight:600;box-shadow:inset 0 -2px 0 #333}
+.tb{flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #e2e2e2;padding:8px 0 12px}
+.tb div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:#b0b0b0}
+.tb div.on{color:#333;font-weight:700}
+.tb i{width:22px;height:22px;border:1px solid #d2d2d2;border-radius:5px;background:#eee}
+.tb div.on i{background:#d8d8d8;border-color:#b8b8b8}
+.dh{display:flex;align-items:baseline;gap:8px;padding-top:2px}
+.dh b{font-size:14px;font-weight:700}
+.pc{display:flex;align-items:center;gap:10px;min-height:64px;background:#fff;border:1px solid #e2e2e2;border-radius:8px;padding:10px 12px}
+.num{flex:none;width:22px;height:22px;border-radius:11px;background:#333;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.th{flex:none;width:44px;height:44px;border-radius:5px;background:#e8e8e8;border:1px solid #d4d4d4}
+.dist{display:flex;align-items:center;gap:8px;padding-left:22px;font-size:10px;color:#a8a8a8}
+.dist:before{content:'';width:0;height:16px;border-left:1px dashed #c8c8c8}
+.add{min-height:44px;border:1px dashed #cfcfcf;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9a9a9a}
+.cb{flex:none;width:22px;height:22px;border:1px solid #c8c8c8;border-radius:5px;background:#fff}
+.cb.on{background:#333;border-color:#333}
+.hnd{flex:none;width:20px;height:14px;background:repeating-linear-gradient(#c4c4c4 0 2px,transparent 2px 6px)}
+.dim{flex:1;background:rgba(0,0,0,.26)}
+.sh{flex:none;background:#fff;border:1px solid #dcdcdc;border-top-left-radius:16px;border-top-right-radius:16px;padding:16px 16px 20px;display:flex;flex-direction:column;gap:10px}
+.bu{max-width:80%;border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.45}
+.bu.me{align-self:flex-end;background:#333;color:#fff}
+.bu.ai{align-self:flex-start;background:#f1f1f1;color:#4a4a4a;display:flex;flex-direction:column;gap:8px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;font-size:10px;color:#a8a8a8;text-align:center}
+.cd{min-height:42px;border-radius:5px;background:#f2f2f2;display:flex;align-items:center;justify-content:center;font-size:11px;color:#8d8d8d}
+.cd.mid{background:#dcdcdc;color:#555}
+.cd.sel{background:#333;color:#fff;font-weight:700}
+.del{margin-top:auto;min-height:44px;border:1px solid #e6dada;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#a4453a;background:#fdfafa}
+.dots{display:flex;gap:6px;align-items:center}
+.dots i{width:6px;height:6px;border-radius:3px;background:#d4d4d4}
+.dots i.on{width:18px;background:#333}
+.co{border:1px solid #dcdcdc;border-radius:8px;background:#fafafa;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.5}
+.co.warn{border-color:#e6dada;background:#fdfafa;color:#8a3a30}
+.ov{position:absolute;inset:0;background:rgba(0,0,0,.58);display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:16px}
+.bub{background:#fff;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.ring{min-height:44px;border:2px solid #fff;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+.ovbtn{min-height:44px;border-radius:8px;background:#fff;color:#333;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.txtbtn{flex:none;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#8d8d8d;margin:0 16px 8px}
+.es{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:24px 28px}
+.es .fig{width:64px;height:64px;border-radius:14px;background:#ededed;border:1px solid #dcdcdc;margin-bottom:4px}
+.es b{font-size:14px;color:#4a4a4a}
+.tip{background:#2b2b2b;color:#fff;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.tip b{font-size:13px}
+.tip .m{font-size:11px;color:#c4c4c4;line-height:1.5}
+.tip .r{display:flex;gap:14px;align-items:center;margin-top:4px}
+.tip .r span{font-size:11px;font-weight:700}
+.tip .r .sec{font-weight:400;color:#a8a8a8;margin-left:auto}
+.arw{width:12px;height:12px;background:#2b2b2b;transform:rotate(45deg);flex:none;margin-left:30px}
+.ovdim{position:absolute;inset:0;background:rgba(0,0,0,.62);z-index:1}
+.spot{position:relative;z-index:2;background:#fff;border-radius:10px;box-shadow:0 0 0 4px rgba(255,255,255,.9)}
+.tw{position:absolute;left:0;right:0;z-index:3;display:flex;flex-direction:column}
+.tw.below{top:calc(100% + 16px)}
+.tw.above{bottom:calc(100% + 16px)}
+.tw.below .arw{margin-bottom:-6px}
+.tw.above .arw{margin-top:-6px}
+  </style>
+</helmet>
+<div class="fr">
+  <div class="rt">app/trip/[id]/edit.tsx  ·  /trip/[id]/edit</div>
+  <div class="ph" style="">
+<div class="hd"><div class="ic">뒤로</div><div class="t">일정 편집</div><div class="act">완료</div></div>
+<div class="bd"><div class="box" style="height:96px;">지도 · 순번 + 경로</div><div class="hs"><div class="xs">거리순 재정렬</div></div><div class="dh"><b>day 1  9.9/수</b><span class="mut" style="margin-left:auto">day 전체 선택</span></div><div class="set"><div class="row"><div class="hnd"></div><div class="cb on"></div><div class="num">1</div><span class="g">부산역</span></div><div class="row"><div class="hnd"></div><div class="cb"></div><div class="num">2</div><span class="g">광안리 해수욕장</span></div><div class="row"><div class="hnd"></div><div class="cb"></div><div class="num">3</div><span class="g">돼지국밥 거리</span></div></div><div class="dh"><b>day 2  9.10/목</b><span class="mut" style="margin-left:auto">day 전체 선택</span></div><div class="set"><div class="row"><div class="hnd"></div><div class="cb"></div><div class="num">1</div><span class="g">감천문화마을</span></div></div><div class="mut">드래그 재정렬 · 방문 완료 체크 · sort_order 만 갱신</div></div>
+<div class="bar"><div class="btn">다른 일차로 이동</div><div class="btn">삭제</div></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
