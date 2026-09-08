@@ -543,4 +543,93 @@ app-01(Wanderlog)에서 차용한 것: `58` AI 어시스턴트 → S19, `63`/`65
    - 골격 단계는 네이티브 헤더를 켜둔다 (뒤로가기·타이틀이 공짜). 5단계에서 화면별로 끈다
    - `expo-router` 57 주의: `Tabs`를 `'expo-router'`에서 import하면 deprecated → `'expo-router/js-tabs'`
    - 마이그레이션 실행(`useMigrations`)은 아직 붙이지 않았다. DB를 읽는 첫 화면에서 넣는다
-5. S10 일정 보드부터 구현. 시각은 `docs/design-system.md` 토큰 적용. 구현하는 파일에서 `Screen` 껍데기를 걷어낸다
+5. **S10 일정 보드 구현 (진행중)** — `docs/design-system.md` 토큰 적용
+   - `theme.ts` — 디자인 시스템 프론트매터를 그대로 옮긴 토큰. 화면에서 hex 를 인라인하지 않는다
+   - Pretendard 4종(`assets/font/`)을 `duego-saas-mobile-v2`에서 복사하고 `expo-font`로 로드 → design-system §미결 1번 해소
+   - `useMigrations` 대신 `migrate()` — drizzle-kit 이 만드는 `migrations.js` 에 `journal` 필드가 없어서 `useMigrations` 타입과 맞지 않는다
+   - **expo-sqlite 는 sync 드라이버다.** 트랜잭션 콜백은 async 일 수 없고 각 문장을 `.run()` 으로 동기 실행한다 (§5.1-4 의 AI 결과 적재도 같은 패턴)
+   - 조회는 `useLiveQuery`(`drizzle-orm/expo-sqlite`) — 로컬 SQLite 는 즉시 반환하므로 로딩 상태를 만들지 않는다 (design-system §로딩)
+   - `lib/geo.ts` Haversine · `lib/date.ts` 일차 라벨 · `lib/itinerary.ts` leftJoin 일차 그룹핑. `npm run check` 로 검증
+   - 미구현으로 남긴 자리: 지도 프리뷰(`react-native-maps` 미설치, §6) · 일차 날씨(무료 API 미선정, §6) · 장소 썸네일(Places 미연동) · 코치마크 C01(대상 위치 측정 필요)
+   - `db/seed.ts` 는 개발용 샘플 여행. S06 구현이 끝나면 삭제한다
+   - 탭 아이콘은 라벨만 둔다 — 아이콘 세트가 미정이고(design-system §자산 로드맵에 없음), 지정하지 않으면 react-navigation 기본 삼각형 플레이스홀더가 나온다
+   - `tabBarStyle` 에 `height` 를 고정하면 하단 safe-area inset 이 무시된다. 토큰 주석대로 `tabBarH + insets.bottom`
+6. **여행 생성 흐름 S03 → S06 구현 (완료)** — 홈에서 여행을 만들어 일정 보드까지 가는 코어 루프가 닫혔다
+   - S03 은 카드 모달이 아니라 `presentation: 'transparentModal'` + scrim + 시트. 바텀시트가 되려면 뒤가 비쳐야 한다
+   - 단계 간 상태는 URL 파라미터로 넘긴다. 스토어를 두지 않는다 — 뒤로 가기에서 그대로 복원된다
+   - S04 검색은 Places 키가 붙기 전까지 비활성. 인기 도시(`lib/cities.ts`)만으로 흐름이 성립한다
+   - `db/createTrip.ts` 가 여행 · 일차 · 체크리스트를 한 트랜잭션으로 만든다. `db/seed.ts` 는 이제 이걸 재사용하고 장소·일정 항목만 얹는다 (S15 구현 시 삭제)
+   - `lib/calendar.ts` 는 윤년 · 월/연 경계 · 범위 선택 전이까지 `npm run check` 로 검증
+7. **S15 장소 추가 · S11 저장 · S01 홈 구현 (완료)** — 개발용 시드(`db/seed.ts`)를 삭제했다. 여행 생성부터 일정에 장소를 담는 것까지 앱 안에서 끝난다
+   - S15 는 Places 키가 없어 **직접 입력("나만의 장소")** 만 연다. 검색·지도 핀 선택은 §6 해소 후
+   - 만든 장소는 저장함에도 남긴다 — 다른 일차에 다시 담을 때 꺼내 쓴다
+   - `db/places.ts` — `createCustomPlace` · `addPlacesToDay`(기존 최대 sort_order 뒤 1000 간격) · `savePlaces`(unique 충돌 회피)
+   - S11 은 탭 라벨에 개수를 붙인다 (app-02 `36`). 빈 상태 E03
+   - S01 은 진행중 1건만 `brand-teal` 채도 카드로 승격. 나머지는 크림 카드 (design-system §카드)
+8. **S16 체크리스트 · S17 가계부 · S18 비용 입력 구현 (완료)** — 외부 의존성이 없는 화면들
+   - S16 의 카테고리는 데이터가 정한다. 템플릿 시드가 만들고, 항목을 다 지우면 섹션도 사라진다. 카테고리 이름 변경·삭제(`32` 의 더보기 메뉴)는 값이 작아 미뤘다
+   - S17 은 `lib/expense.ts` 로 집계한다 — 통화별 합계 · 일차별(삭제된 일차는 맨 뒤 `미지정`, §4.1) · 카테고리별. `npm run check` 로 검증
+   - 원·엔·동은 소수점을 쓰지 않는다 (`formatAmount`)
+   - S18 의 일차 칩은 `trip_days` 에서 만든다. 연결 장소는 BS1 진입 경로가 생기면 채운다
+9. **S14 일정 편집 구현 (완료)** — 담은 장소의 순서를 바꾸거나 지울 방법이 처음 생겼다
+   - **거리순 재정렬**은 최근접 이웃 휴리스틱이다. 첫 장소를 고정하고 그다음부터 가장 가까운 곳을 고른다. 최적 경로가 아니다 — 하루 5~6개 규모라 충분하고 2-opt 는 실제로 어색해지면 얹는다. 좌표 없는 항목은 원래 순서로 맨 뒤
+   - 장소가 2개 이하면 재정렬 버튼을 감춘다 (바꿀 게 없다)
+   - **드래그 대신 위/아래 버튼.** `react-native-draggable-flatlist` 가 필요한데, 그 하나를 위해 의존성을 늘리기보다 먼저 동작하는 걸 넣었다. `reanimated`·`gesture-handler` 는 전이 의존성으로만 있고 `package.json` 에는 없다
+   - `day 전체 선택` → 하단 액션바 → `다른 일차로 이동`(일차 칩) / `삭제`
+   - 재정렬은 `sort_order` 만 통째로 다시 쓴다 (§4 규약)
+10. **S21 여행 설정 구현 (완료)** — §4.1 날짜 변경 규칙이 여기서 처음 실행된다
+    - `lib/tripDates.ts` 가 세 경우(이동 · 증가 · 감소)를 한 계산으로 낸다. 새 날짜와 기존 일차를 앞에서부터 짝지으면 남는 쪽이 곧 추가/삭제다. `npm run check` 로 검증
+    - 실기기 확인: 2박3일 → 당일치기로 줄이자 `day 2, day 3 의 장소 2개가 저장함으로 이동합니다.` 가 뜨고, 적용 후 두 장소가 `saved_places` 로 옮겨졌다. 이미 저장함에 있던 장소는 중복 삽입되지 않았다
+    - 빈 일차만 사라지면 장소 얘기를 하지 않는다 (`day 3 가 사라집니다.`)
+    - 날짜 편집은 별도 라우트를 만들지 않고 설정 화면에 인라인으로 편다. S05 의 캘린더를 `components/RangeCalendar.tsx` 로 빼서 둘이 공유한다 (S05 는 145줄 → 41줄)
+    - **JSON 내보내기는 RN 내장 `Share`** 로 처리한다. `expo-sharing`·`expo-file-system` 을 붙이지 않는다. `chat_messages` 는 내보내지 않는다 — 대화는 여행 데이터가 아니다
+    - 여행 삭제는 RN 내장 `Alert` 확인 후 cascade
+11. **S22 온보딩 구현 (완료)** — 첫 실행이면 `/` 가 `/onboarding` 으로 리다이렉트한다. 완료 시 `app_settings.onboarded = '1'`
+    - 실기기 확인: `app_settings` 를 비우고 콜드 스타트 → 온보딩 → 완주 → `onboarded=1` 저장 → 홈. 재진입 없음
+    - O02 의 경고에 `brand-peach` 채도 카드를 쓴다. 화면당 채도 카드 하나 규칙에 맞고, 이 온보딩에서 유일하게 튀어야 하는 문장이다
+    - **설계와 달라진 두 곳** (§2.0 대비):
+      - O01 을 3페이지 캐러셀 대신 **한 화면 + 3항목 목록**으로 했다. 캐러셀이면 상단 단계 점과 페이지 점이 두 줄이 되고, 원래 3페이지 중 2개(지도 동선 · AI 초안)는 아직 동작하지 않는 기능이라 광고가 된다. 지금 참인 것만 적었다
+      - O03 의 버튼이 `위치 허용` 이 아니라 `시작하기` 다. `expo-location` 을 붙일 수는 있지만 **위치를 쓰는 기능이 아직 없다**(지도 · Places 둘 다 §6 대기). 안 되는 버튼을 놓는 대신 "장소를 처음 검색할 때 물어본다"고 적었다 — 사용 지점에서 묻는 게 권한 UX 관례이기도 하다. Places 가 붙을 때 실제 요청을 그 지점에 넣는다
+12. **S02 앱 설정 구현 (완료)** — §1.3-2 가 "유일한 백업·기기 이전 수단"이라 한 JSON 내보내기/가져오기가 실제로 동작한다
+    - 봉투 형식을 하나로 통일했다: `{format:'itinova.backup', version, trips:[...]}`. 여행 1건(S21)도 배열 하나로 내보내므로 가져오기는 한 가지 모양만 다룬다
+    - **가져오기는 덮어쓰지 않는다.** 여행 id 가 겹치면 그 여행의 모든 id 를 새로 발급해 별개 여행으로 넣는다 — 같은 백업을 두 번 가져와 여행이 둘 생기는 게, 기존 여행이 사라지는 것보다 낫다
+    - `google_place_id` 가 이미 캐시된 장소는 재사용한다. 커스텀 장소(`google_place_id` 없음)만 새로 들어간다
+    - 검증·id 재매핑은 `lib/backup.ts` 순수 함수. 손상된 백업·더 새로운 버전·null 유지까지 `npm run check` 로 검증
+    - 실기기 왕복 확인: trips 1→2 · places 6→12 · day_items 4→8 · expenses 1→2, 자식 행이 전부 새 여행을 가리킨다
+    - 가져오기는 붙여넣기 방식이다. `expo-document-picker` 를 붙이지 않았다 — 파일 선택이 필요해지면 그때
+    - **넣지 않은 설정과 이유를 화면에 적었다**: 날짜 형식(화면 전체 배선 필요) · 기본 통화(생성 시 도시가 정한다) · 위치 권한(쓰는 기능이 없다) · 알림(기능이 없다). 동작하지 않는 스위치를 놓지 않는다
+13. 나머지 화면 구현. 파일마다 `Screen` 껍데기를 걷어내고 `headerShown: false` 로 내린다
+
+### 남은 화면과 막고 있는 것
+
+| 화면 | 막는 것 |
+| --- | --- |
+| S13 전체 지도 · S10 지도 프리뷰 | `react-native-maps` — Expo Go 불가, dev client 필요 (§6) |
+| S15 검색 · S20 장소 상세 · S09 추천 | Google Places 키 (§6) |
+| S07 · S08 · S19 | Claude API 키 + 프록시 (§6) |
+| S12 여행 도구 | 날씨 · 환율 무료 API 미선정 (§6) |
+| ~~S14 편집~~ (완료, 드래그만 라이브러리 대기) | — |
+| ~~S21 여행 설정~~ (완료) | — |
+| ~~S22 온보딩~~ (완료) | — |
+| ~~S02 앱 설정~~ (완료) | — |
+| BS1 · BS3 | 막는 것 없음 |
+
+#### 실기기에서만 드러난 것들
+
+타입 체크와 번들만으로는 셋 다 안 잡힌다. 시뮬레이터에서 눌러봐야 나온다.
+
+**`useLiveQuery` 가 갱신되지 않는다** — `SQLite.openDatabaseSync` 에 `enableChangeListener: true` 를 주지 않으면 `addDatabaseChangeListener` 가 아무것도 받지 못하고, drizzle 의 `useLiveQuery` 는 첫 조회 결과에 멈춘다. 여행을 지워도 홈에 그대로 남고, 죽은 id 로 링크가 걸린다.
+
+**탭 화면의 `router.back()` 은 이전 탭으로 간다** — 여행 밖으로 나가지 않는다. `홈` 처럼 목적지가 분명한 버튼은 `router.navigate('/')` 로 명시한다.
+
+**drizzle 의 `useLiveQuery` 는 조인 쿼리에 쓸 수 없다** — 쿼리의 `from` 테이블 **하나만** 감시한다(`config.name === tableName`). S10 은 `.from(trip_days)` 에 `day_items`·`places` 를 join 하므로, 장소를 담아도(`day_items` insert) 화면이 갱신되지 않는다. DB 에는 저장되는데 화면에만 안 나와서 더 헷갈린다. → `lib/useDbQuery.ts` 로 대체했다. 감시할 테이블을 명시로 받는다.
+
+**`tabBarStyle` 의 고정 `height` 는 하단 인셋을 먹는다** — 토큰 주석대로 `tabBarH + insets.bottom` 을 주고 `paddingBottom` 도 함께 넣는다.
+
+#### expo-router 파라미터 함정
+
+`/trip/[id]/(tabs)/...` 화면을 **탭을 눌러** 진입하면 `useLocalSearchParams` 가 부모 동적 세그먼트의 `id` 를 돌려주지 않는다(`undefined`). URL 로 직접 push 했을 때만 local 에 들어오고, `useGlobalSearchParams` 는 두 경우 다 채워진다. 여행 내부 12개 화면 전부에 해당하므로 `lib/useTripId.ts` 훅으로 묶었다 — local 을 먼저 보고 없을 때만 global 로 떨어진다 (global 은 URL 이 바뀔 때마다 포커스 없는 화면까지 갱신하므로).
+
+### 알려진 제약
+
+**웹 타겟은 빌드되지 않는다.** `expo-sqlite` 의 웹 구현이 `wa-sqlite.wasm` 을 요구하고 기본 Metro 설정이 이를 해석하지 못한다. 모바일 전용 제품이라 그대로 둔다 — 웹이 필요해지면 `metro.config.js` 의 `assetExts` 에 `wasm` 을 넣고 OPFS 요구사항(COOP/COEP 헤더)을 확인해야 한다.

@@ -6,6 +6,7 @@
     "drizzle-orm": "^1.0.0-rc.4",
     "expo": "~57.0.19",
     "expo-constants": "~57.0.17",
+    "expo-font": "~57.0.3",
     "expo-linking": "~57.0.9",
     "expo-router": "~57.0.18",
     "expo-splash-screen": "~57.0.8",
@@ -30,7 +31,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "check": "node lib/check.ts"
   },
   "private": true
 }

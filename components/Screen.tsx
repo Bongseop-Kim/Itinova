@@ -1,18 +1,19 @@
 import { Link } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 // ponytail: 라우트 배선을 클릭으로 확인하기 위한 임시 껍데기.
 // design.md §8-5 에서 화면을 실제로 만들 때 파일별로 걷어낸다.
-type Href = React.ComponentProps<typeof Link>['href'];
+export type Href = React.ComponentProps<typeof Link>['href'];
 
 type Props = {
   id: string;
   title: string;
   note?: string;
   to?: [Href, string][];
+  actions?: [() => void, string][];
 };
 
-export default function Screen({ id, title, note, to = [] }: Props) {
+export default function Screen({ id, title, note, to = [], actions = [] }: Props) {
   return (
     <ScrollView contentContainerStyle={s.wrap}>
       <Text style={s.id}>{id}</Text>
@@ -23,6 +24,11 @@ export default function Screen({ id, title, note, to = [] }: Props) {
           <Link key={i} href={href} style={s.link}>
             {label}
           </Link>
+        ))}
+        {actions.map(([onPress, label], i) => (
+          <Pressable key={i} onPress={onPress} accessibilityRole="button">
+            <Text style={s.link}>{label}</Text>
+          </Pressable>
         ))}
       </View>
     </ScrollView>

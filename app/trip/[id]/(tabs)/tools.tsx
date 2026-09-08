@@ -1,9 +1,8 @@
-import { useLocalSearchParams } from 'expo-router';
-
 import Screen from '../../../../components/Screen';
+import { useTripId } from '../../../../lib/useTripId';
 
 export default function Tools() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId();
   return (
     <Screen
       id={`S12  ·  /trip/${id}/tools`}

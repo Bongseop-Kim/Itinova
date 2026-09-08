@@ -1,9 +1,8 @@
-import { useLocalSearchParams } from 'expo-router';
-
 import Screen from '../../../components/Screen';
+import { useTripId } from '../../../lib/useTripId';
 
 export default function TripMap() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId();
   return (
     <Screen
       id={`S13  ·  /trip/${id}/map`}

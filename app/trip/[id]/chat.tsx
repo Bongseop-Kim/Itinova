@@ -1,9 +1,8 @@
-import { useLocalSearchParams } from 'expo-router';
-
 import Screen from '../../../components/Screen';
+import { useTripId } from '../../../lib/useTripId';
 
 export default function Chat() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const id = useTripId();
   return (
     <Screen
       id={`S19  ·  /trip/${id}/chat`}
