@@ -1,16 +1,24 @@
+import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import PlaceMap from '../../../components/PlaceMap';
+import AppleSearchBar from '../../../components/AppleSearchBar';
+import { useAppleSearch } from '../../../lib/useAppleSearch';
+import { appleCategory, type ApplePlace } from '../../../lib/applePlaces';
+import { db } from '../../../db';
+import type { LatLng } from '../../../lib/geo';
+import { validCoord } from '../../../lib/map';
 import { BottomCtaBar, Chip, ScreenHeader, SegmentTabs } from '../../../components/ui';
-import { addPlacesToDay, createCustomPlace, savePlaces, savedPlacesQuery } from '../../../db/places';
-import { places as placesTable, savedPlaces } from '../../../db/schema';
+import { addPlacesToDay, createCustomPlace, storeApplePlace, savePlaces, savedPlacesQuery } from '../../../db/places';
+import { places as placesTable, savedPlaces, trips } from '../../../db/schema';
 import { CATEGORY_LABEL, categoryLabel, type Category } from '../../../lib/category';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { useTripId } from '../../../lib/useTripId';
-import { colors, rounded, sizing, spacing, type as t } from '../../../theme';
+import { colors, mapStyle, rounded, sizing, spacing, type as t } from '../../../theme';
 
-const SOURCES = ['최근 저장', '나만의 장소'] as const;
+const SOURCES = ['장소 검색', '최근 저장', '나만의 장소'] as const;
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[];
 
 export default function AddPlace() {
@@ -19,32 +27,83 @@ export default function AddPlace() {
   const { day } = useLocalSearchParams<{ day?: string }>();
   const dayIndex = day ? Number(day) : undefined;
 
-  const [source, setSource] = useState<(typeof SOURCES)[number]>('최근 저장');
+  const [coord, setCoord] = useState<LatLng | null>(null);
+  const trip = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id])?.[0];
+  const [source, setSource] = useState<(typeof SOURCES)[number]>('장소 검색');
   const [selected, setSelected] = useState<string[]>([]);
+  const [picked, setPicked] = useState<ApplePlace[]>([]);
+  const confirming = useRef(false);
+  const search = useAppleSearch(false, trip?.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null);
+  const toggleApple = (place: ApplePlace) => setPicked((cur) => cur.some((p) => p.applePlaceId === place.applePlaceId)
+    ? cur.filter((p) => p.applePlaceId !== place.applePlaceId) : [...cur, place]);
 
   const saved = useDbQuery(() => savedPlacesQuery(id), [savedPlaces, placesTable], [id]);
+  const pickedKeys = new Set(picked.map((p) => p.applePlaceId));
+  const count = picked.length + selected.filter((key) => !pickedKeys.has(saved?.find((p) => p.placeId === key)?.applePlaceId ?? '')).length;
 
   const toggle = (placeId: string) =>
     setSelected((cur) => (cur.includes(placeId) ? cur.filter((x) => x !== placeId) : [...cur, placeId]));
 
   const confirm = () => {
-    if (dayIndex) addPlacesToDay(id, dayIndex, selected);
-    else savePlaces(id, selected);
-    router.back();
+    if (confirming.current || !count) return;
+    confirming.current = true;
+    try {
+      const ids = [...new Set([...selected, ...picked.map(storeApplePlace)])];
+      if (dayIndex) addPlacesToDay(id, dayIndex, ids);
+      else savePlaces(id, ids);
+      if (router.canGoBack()) router.back();
+      else router.replace(dayIndex ? `/trip/${id}/itinerary` : `/trip/${id}/saved`);
+    } catch {
+      confirming.current = false;
+      Alert.alert('장소를 담지 못했어요', '다시 시도해 주세요.');
+    }
   };
 
   return (
     <View style={s.screen}>
       <ScreenHeader title={dayIndex ? `day ${dayIndex}에 담기` : '저장함에 담기'} />
 
-      {/* Places 검색과 지도 핀 선택은 API 키가 붙은 뒤에 열린다 (design.md §6) */}
-      <View style={s.searchDisabled}>
-        <Text style={s.searchLabel}>장소 검색은 준비 중이에요</Text>
+      <View style={s.map}>
+        <PlaceMap
+          pins={source === '장소 검색' ? search.results.map((p, i) => ({ id: p.applePlaceId, title: p.name, order: i + 1, coord: { lat: p.lat, lng: p.lng } })) : source === '나만의 장소' ? (coord ? [{ id: 'custom', title: '선택한 위치', order: 1, coord }] : []) : (saved ?? []).flatMap((p, i) => validCoord(p.lat, p.lng) ? [{ id: p.placeId, title: p.name, order: i + 1, coord: { lat: p.lat!, lng: p.lng! } }] : [])}
+          center={trip?.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null}
+          selectedIds={source === '장소 검색' ? picked.map((p) => p.applePlaceId) : source === '나만의 장소' ? ['custom'] : selected}
+          onPinPress={source === '장소 검색' ? (key) => { const p = search.results.find((p) => p.applePlaceId === key); if (p) toggleApple(p); } : source === '최근 저장' ? toggle : undefined}
+          onPick={source === '나만의 장소' ? setCoord : undefined}
+        />
       </View>
-
       <SegmentTabs options={SOURCES} value={source} onChange={setSource} />
 
-      {source === '최근 저장' ? (
+      {source === '장소 검색' ? (
+        <>
+          <AppleSearchBar search={search} placeholder={`${trip?.cityName ?? '여행지'} 장소 검색`} />
+          {!!picked.length && <View>
+            <ScrollView horizontal contentContainerStyle={s.picked} showsHorizontalScrollIndicator={false}>
+              {picked.map((p) => <Chip key={p.applePlaceId} label={`${p.name} · 해제`} selected onPress={() => toggleApple(p)} />)}
+            </ScrollView>
+          </View>}
+          <FlatList
+            data={search.results}
+            keyExtractor={(p) => p.applePlaceId}
+            contentContainerStyle={s.list}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={!search.loading && !search.error ? <Text style={s.emptyBody}>
+              {search.searched ? '검색 결과가 없어요. 다른 이름으로 검색해 주세요.' : '관광지, 식당, 숙소 이름을 검색해 주세요.'}
+            </Text> : null}
+            renderItem={({ item }) => {
+              const checked = picked.some((p) => p.applePlaceId === item.applePlaceId);
+              return <Pressable onPress={() => toggleApple(item)} style={s.row}
+                accessibilityRole="checkbox" accessibilityState={{ checked }}>
+                <View style={s.rowBody}>
+                  <Text style={s.rowTitle}>{item.name}</Text>
+                  <Text style={s.rowMeta}>{categoryLabel(appleCategory(item.poiCategory))} · {item.address}</Text>
+                </View>
+                <Text style={[s.pick, checked && s.pickOn]}>{checked ? '선택됨' : '선택'}</Text>
+              </Pressable>;
+            }}
+          />
+        </>
+      ) : source === '최근 저장' ? (
         <FlatList
           data={saved ?? []}
           keyExtractor={(p) => p.placeId}
@@ -77,9 +136,12 @@ export default function AddPlace() {
         />
       ) : (
         <CustomPlaceForm
+          coord={coord}
+          onClearCoord={() => setCoord(null)}
           onCreate={(placeId) => {
             setSelected((cur) => [...cur, placeId]);
             setSource('최근 저장');
+            setCoord(null);
             savePlaces(id, [placeId]); // 만든 장소는 보관함에도 남긴다
           }}
         />
@@ -88,30 +150,34 @@ export default function AddPlace() {
       <BottomCtaBar
         label={
           dayIndex
-            ? `day ${dayIndex} 일정에 ${selected.length}개 담기`
-            : `저장함에 ${selected.length}개 담기`
+            ? `day ${dayIndex} 일정에 ${count}개 담기`
+            : `저장함에 ${count}개 담기`
         }
-        disabled={!selected.length}
+        disabled={!count}
         onPress={confirm}
       />
     </View>
   );
 }
 
-function CustomPlaceForm({ onCreate }: { onCreate: (placeId: string) => void }) {
+function CustomPlaceForm({ onCreate, coord, onClearCoord }: { onCreate: (placeId: string) => void; coord: LatLng | null; onClearCoord: () => void }) {
   const [name, setName] = useState('');
   const [region, setRegion] = useState('');
   const [category, setCategory] = useState<Category>('attraction');
 
   const submit = () => {
     if (!name.trim()) return;
-    onCreate(createCustomPlace({ name, category, region }));
-    setName('');
-    setRegion('');
+    try {
+      onCreate(createCustomPlace({ name, category, region, coord }));
+      setName('');
+      setRegion('');
+    } catch { Alert.alert('장소를 만들지 못했어요', '입력 내용을 확인하고 다시 시도해 주세요.'); }
   };
 
   return (
-    <View style={s.form}>
+    <ScrollView contentContainerStyle={s.form} keyboardShouldPersistTaps="handled">
+      <Text style={s.rowMeta}>{coord ? `선택한 위치: ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}` : '위 지도를 눌러 장소의 위치를 선택해 주세요 (선택)'}</Text>
+      {coord && <Pressable style={s.add} onPress={onClearCoord} accessibilityRole="button"><Text style={s.addLabel}>위치 선택 해제</Text></Pressable>}
       <TextInput
         style={s.input}
         value={name}
@@ -148,24 +214,16 @@ function CustomPlaceForm({ onCreate }: { onCreate: (placeId: string) => void }) 
       >
         <Text style={[s.addLabel, !name.trim() && s.addLabelDisabled]}>장소 만들기</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
+  map: { height: mapStyle.collapsedHeight, marginHorizontal: spacing.gutter, borderRadius: rounded.lg, overflow: 'hidden', marginBottom: spacing.sm },
   screen: { flex: 1, backgroundColor: colors.canvas },
-  searchDisabled: {
-    marginHorizontal: spacing.gutter,
-    marginBottom: spacing.sm,
-    minHeight: sizing.controlH,
-    borderRadius: rounded.pill,
-    backgroundColor: colors.surfaceCard,
-    paddingHorizontal: spacing.md,
-    justifyContent: 'center',
-  },
-  searchLabel: { ...t.bodyMd, color: colors.mutedSoft },
 
   list: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  picked: { paddingHorizontal: spacing.gutter, gap: spacing.xs, paddingBottom: spacing.xs },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,7 +259,7 @@ const s = StyleSheet.create({
   emptyTitle: { ...t.titleMd, color: colors.ink },
   emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center' },
 
-  form: { flex: 1, paddingHorizontal: spacing.gutter, paddingTop: spacing.md, gap: spacing.sm },
+  form: { flexGrow: 1, paddingHorizontal: spacing.gutter, paddingTop: spacing.md, gap: spacing.sm },
   input: {
     ...t.bodyMd,
     color: colors.ink,

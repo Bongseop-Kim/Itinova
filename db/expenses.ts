@@ -1,7 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 
 import { db, newId } from './index';
-import { expenses, tripDays } from './schema';
+import { expenses, places, tripDays } from './schema';
 
 /** dayIndex 는 trip_days 를 통해 얻는다. 일차가 삭제되면 trip_day_id 가 null 이 되어 '미지정' 이 된다. */
 export const expensesQuery = (tripId: string) =>
@@ -22,6 +22,7 @@ export const expensesQuery = (tripId: string) =>
 export function createExpense(input: {
   tripId: string;
   dayIndex?: number;
+  placeId?: string;
   title: string;
   category: string;
   currency: string;
@@ -42,6 +43,7 @@ export function createExpense(input: {
       id: newId(),
       tripId: input.tripId,
       tripDayId: day?.id ?? null,
+      placeId: input.placeId && db.select({ id: places.id }).from(places).where(eq(places.id, input.placeId)).all()[0] ? input.placeId : null,
       title: input.title.trim(),
       category: input.category,
       currency: input.currency,

@@ -4,6 +4,11 @@ import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import PlaceMap from '../../../../components/PlaceMap';
+import PlaceQuickActions from '../../../../components/PlaceQuickActions';
+import { useTripWeather } from '../../../../lib/useTravelData';
+import { weatherSummary } from '../../../../lib/travelTools';
+import { mapData } from '../../../../lib/map';
 import { type Href } from '../../../../components/ui';
 import { db } from '../../../../db';
 import { dayItems, places, tripDays, trips } from '../../../../db/schema';
@@ -12,16 +17,14 @@ import { dayMeta } from '../../../../lib/date';
 import { formatKm, haversineKm } from '../../../../lib/geo';
 import { groupByDay, type DaySection, type Item } from '../../../../lib/itinerary';
 import { useDbQuery } from '../../../../lib/useDbQuery';
-import { colors, rounded, sizing, spacing, type as t } from '../../../../theme';
+import { colors, mapStyle, rounded, sizing, spacing, type as t } from '../../../../theme';
 import { useTripId } from '../../../../lib/useTripId';
-
-const MAP_COLLAPSED = 160;
-const MAP_EXPANDED = 320;
 
 export default function Itinerary() {
   const id = useTripId();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [selectedItem, setSelectedItem] = useState<string>();
   const [mapExpanded, setMapExpanded] = useState(false);
 
   const tripRows = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id]);
@@ -51,6 +54,7 @@ export default function Itinerary() {
   );
 
   const trip = tripRows?.[0];
+  const weather = useTripWeather(trip);
 
   const sections = useMemo<DaySection[]>(() => groupByDay(rows ?? []), [rows]);
 
@@ -85,17 +89,17 @@ export default function Itinerary() {
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <View style={s.listHeader}>
-            <Pressable
-              onPress={() => setMapExpanded((v) => !v)}
-              style={[s.mapPreview, { height: mapExpanded ? MAP_EXPANDED : MAP_COLLAPSED }]}
-              accessibilityRole="button"
-              accessibilityLabel={mapExpanded ? '지도 접기' : '지도 펼치기'}
-            >
-              {/* react-native-maps 미설치 (design.md §6). 자산·지도가 없어도 자리는 확보한다 */}
-              <Text style={s.mapPlaceholder}>지도</Text>
-              <Text style={s.mapHint}>{mapExpanded ? '접기' : '펼치기'}</Text>
-            </Pressable>
+            <View style={[s.mapPreview, { height: mapExpanded ? mapStyle.expandedHeight : mapStyle.collapsedHeight }]}>
+              <PlaceMap {...mapData(sections)} center={trip.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null} onPinPress={setSelectedItem} />
+            </View>
+            <View style={s.quickChips}>
+              <QuickChip href={`/trip/${id}/map`} label="전체 지도" />
+              <Pressable accessibilityRole="button" onPress={() => setMapExpanded((v) => !v)} style={s.chip}>
+                <Text style={s.chipLabel}>{mapExpanded ? '지도 접기' : '지도 펼치기'}</Text>
+              </Pressable>
+            </View>
 
+            <Link href={`/trip/${id}/tools`} style={s.dayMeta} accessibilityRole="link">{weather.error ? '날씨 연결 실패 · 도구에서 다시 시도' : '날씨: Open-Meteo · 예보와 출처 보기'}</Link>
             <View style={s.quickChips}>
               <QuickChip href={`/trip/${id}/checklist`} label="체크리스트" />
               <QuickChip href={`/trip/${id}/budget`} label="가계부" />
@@ -107,7 +111,7 @@ export default function Itinerary() {
           <View style={s.dayHeader}>
             <Text style={s.dayLabel}>day {section.dayIndex}</Text>
             <Text style={s.dayMeta}>{dayMeta(section.date)}</Text>
-            {/* 날씨 자리 — 무료 API 미선정 (design.md §6) */}
+            {weather.data?.days.find((day) => day.date === section.date) && <Text style={s.dayMeta}>{weatherSummary(weather.data.days.find((day) => day.date === section.date)!)}</Text>}
           </View>
         )}
         renderItem={({ item, index, section }) => {
@@ -117,7 +121,7 @@ export default function Itinerary() {
           return (
             <View>
               {gap ? <Text style={s.distance}>{gap}</Text> : null}
-              <ItineraryCard item={item} order={index + 1} />
+              <ItineraryCard item={item} order={index + 1} onPress={() => setSelectedItem(item.id)} />
             </View>
           );
         }}
@@ -129,6 +133,7 @@ export default function Itinerary() {
           </Link>
         )}
       />
+      {selectedItem && <PlaceQuickActions key={selectedItem} itemId={selectedItem} onClose={() => setSelectedItem(undefined)} />}
     </View>
   );
 }
@@ -143,9 +148,9 @@ function QuickChip({ href, label }: { href: Href; label: string }) {
   );
 }
 
-function ItineraryCard({ item, order }: { item: Item; order: number }) {
+function ItineraryCard({ item, order, onPress }: { item: Item; order: number; onPress: () => void }) {
   return (
-    <View style={s.card}>
+    <Pressable style={s.card} onPress={onPress} accessibilityRole="button">
       <View style={s.badge}>
         <Text style={s.badgeLabel} allowFontScaling={false}>
           {order}
@@ -161,7 +166,7 @@ function ItineraryCard({ item, order }: { item: Item; order: number }) {
         </Text>
       </View>
       {item.startTime ? <Text style={s.cardTime}>{item.startTime}</Text> : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -188,12 +193,8 @@ const s = StyleSheet.create({
   mapPreview: {
     backgroundColor: colors.surfaceCard,
     borderRadius: rounded.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xxs,
+    overflow: 'hidden',
   },
-  mapPlaceholder: { ...t.caption, color: colors.muted },
-  mapHint: { ...t.caption, color: colors.muted },
 
   quickChips: { flexDirection: 'row', gap: spacing.xs },
   chip: {
@@ -209,6 +210,7 @@ const s = StyleSheet.create({
 
   dayHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'baseline',
     gap: spacing.xs,
     paddingTop: spacing.lg,

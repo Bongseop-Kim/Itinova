@@ -19,13 +19,16 @@
           "imageWidth": 180
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-maps",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bongsub.Itinova"
     },
     "android": {
       "adaptiveIcon": {

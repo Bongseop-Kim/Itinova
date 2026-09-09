@@ -1,8 +1,9 @@
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import DayPickerSheet from '../../../../components/DayPickerSheet';
 import { savedPlacesQuery } from '../../../../db/places';
 import { places, savedPlaces } from '../../../../db/schema';
 import { categoryLabel, type Category } from '../../../../lib/category';
@@ -22,6 +23,7 @@ export default function Saved() {
   const id = useTripId();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [adding, setAdding] = useState<{ placeId: string; name: string }>();
   const [filter, setFilter] = useState<string>('전체');
 
   const data = useDbQuery(() => savedPlacesQuery(id), [savedPlaces, places], [id]);
@@ -80,24 +82,22 @@ export default function Saved() {
         renderItem={({ item }) => (
           <View style={s.row}>
             <View style={s.thumb} />
-            <View style={s.rowBody}>
+            <Pressable style={s.rowBody} accessibilityRole="button" accessibilityLabel={`${item.name} 상세`} onPress={() => router.push(`/place/${item.placeId}?tripId=${id}`)}>
               <Text style={s.rowTitle} numberOfLines={1}>
                 {item.name}
               </Text>
               <Text style={s.rowMeta} numberOfLines={1}>
                 {[categoryLabel(item.category as Category), item.region].filter(Boolean).join(' · ')}
               </Text>
-            </View>
-            {/* BS3(일차 선택) 은 아직 없다 — 지금은 장소 추가 화면으로 보낸다 */}
-            <Link href={`/trip/${id}/add-place`} asChild>
-              <Pressable style={s.action} accessibilityRole="button">
-                <Text style={s.actionLabel}>일정에 추가</Text>
-              </Pressable>
-            </Link>
+            </Pressable>
+            <Pressable style={s.action} accessibilityRole="button" accessibilityLabel={`${item.name} 일정에 추가`} onPress={() => setAdding(item)}>
+              <Text style={s.actionLabel}>일정에 추가</Text>
+            </Pressable>
           </View>
         )}
       />
 
+      {adding && <DayPickerSheet tripId={id} placeId={adding.placeId} name={adding.name} onClose={() => setAdding(undefined)} />}
       <View style={s.ctaBar}>
         <Pressable
           onPress={() => router.push(`/trip/${id}/add-place`)}

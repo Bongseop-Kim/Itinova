@@ -1,4 +1,4 @@
-// S04 인기 도시. Google Places 검색은 API 키가 붙은 뒤에 열린다 (design.md §6).
+// S04 인기 도시. iOS에서는 Apple MapKit 검색도 제공한다.
 // ponytail: 검색 없이도 흐름이 성립하도록 대표 도시만 정적으로 둔다.
 export type City = {
   name: string;
@@ -30,3 +30,9 @@ export const OVERSEAS: City[] = [
   { name: '싱가포르', region: '싱가포르', countryCode: 'SG', currency: 'SGD', lat: 1.3521, lng: 103.8198 },
   { name: '파리', region: '프랑스', countryCode: 'FR', currency: 'EUR', lat: 48.8566, lng: 2.3522 },
 ];
+
+// 현재 도시 목록은 각 국가의 단일 시간대 지역만 포함한다. 목록 밖 도시는 날씨 응답의 IANA 시간대를 쓴다.
+export function cityTimeZone(name: string, countryCode: string | null): string | undefined {
+  if (![...DOMESTIC, ...OVERSEAS].some((city) => city.name === name && city.countryCode === countryCode)) return undefined;
+  return ({ KR: 'Asia/Seoul', JP: 'Asia/Tokyo', TW: 'Asia/Taipei', TH: 'Asia/Bangkok', VN: 'Asia/Ho_Chi_Minh', SG: 'Asia/Singapore', FR: 'Europe/Paris' } as Record<string, string>)[countryCode ?? ''];
+}

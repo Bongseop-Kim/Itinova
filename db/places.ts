@@ -1,12 +1,30 @@
 import { and, desc, eq } from 'drizzle-orm';
 
+import { validCoord } from '../lib/map';
+import type { LatLng } from '../lib/geo';
 import type { Category } from '../lib/category';
+import { appleCategory, uniqueApplePlaces, type ApplePlace } from '../lib/applePlaces';
 
 import { db, newId } from './index';
 import { dayItems, places, savedPlaces, tripDays } from './schema';
 
+export function storeApplePlace(place: ApplePlace): string {
+  if (!uniqueApplePlaces([place], false).length) throw new Error('올바른 장소가 아니에요.');
+  const existing = db.select({ id: places.id }).from(places).where(eq(places.applePlaceId, place.applePlaceId)).all()[0];
+  if (existing) return existing.id;
+  const id = newId();
+  db.insert(places).values({
+    id, applePlaceId: place.applePlaceId, name: place.name, address: place.address,
+    region: place.region, lat: place.lat, lng: place.lng, category: appleCategory(place.poiCategory),
+    isCustom: false, fetchedAt: new Date().toISOString(),
+  }).run();
+  return id;
+}
+
 /** 사용자가 직접 만든 "나만의 장소". Places 를 거치지 않으므로 google_place_id 가 없다. */
-export function createCustomPlace(input: { name: string; category: Category; region?: string }): string {
+export function createCustomPlace(input: { name: string; category: Category; region?: string; coord?: LatLng | null }): string {
+  if (!input.name.trim()) throw new Error('장소 이름을 입력해 주세요.');
+  if (input.coord && !validCoord(input.coord.lat, input.coord.lng)) throw new Error('올바른 좌표를 선택해 주세요.');
   const id = newId();
   db.insert(places)
     .values({
@@ -15,6 +33,8 @@ export function createCustomPlace(input: { name: string; category: Category; reg
       category: input.category,
       region: input.region?.trim() || null,
       isCustom: true,
+      lat: input.coord?.lat ?? null,
+      lng: input.coord?.lng ?? null,
     })
     .run();
   return id;
@@ -32,7 +52,7 @@ export function addPlacesToDay(tripId: string, dayIndex: number, placeIds: strin
     .from(tripDays)
     .where(and(eq(tripDays.tripId, tripId), eq(tripDays.dayIndex, dayIndex)))
     .all()[0];
-  if (!day) return;
+  if (!day) throw new Error('일차를 찾을 수 없어요.');
 
   const last = db
     .select({ sortOrder: dayItems.sortOrder })
@@ -85,11 +105,20 @@ export const savedPlacesQuery = (tripId: string) =>
   db
     .select({
       placeId: places.id,
+      applePlaceId: places.applePlaceId,
       name: places.name,
       category: places.category,
       region: places.region,
+      photoUrl: places.photoUrl,
+      lat: places.lat,
+      lng: places.lng,
     })
     .from(savedPlaces)
     .innerJoin(places, eq(places.id, savedPlaces.placeId))
     .where(eq(savedPlaces.tripId, tripId))
     .orderBy(desc(savedPlaces.createdAt));
+
+export function updateCustomPlaceLocation(id: string, coord: LatLng): void {
+  if (!validCoord(coord.lat, coord.lng)) throw new Error('올바른 좌표를 선택해 주세요.');
+  db.update(places).set({ lat: coord.lat, lng: coord.lng }).where(and(eq(places.id, id), eq(places.isCustom, true))).run();
+}

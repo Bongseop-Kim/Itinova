@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
 
+import { validTime } from '../lib/map';
 import { sortOrders } from '../lib/reorder';
 
 import { db } from './index';
@@ -51,4 +52,9 @@ export function moveItemsToDay(tripId: string, itemIds: string[], targetDayIndex
 export function deleteItems(itemIds: string[]): void {
   if (!itemIds.length) return;
   db.delete(dayItems).where(inArray(dayItems.id, itemIds)).run();
+}
+
+export function updateItemDetails(id: string, startTime: string, memo: string): void {
+  if (!validTime(startTime)) throw new Error('시간은 HH:mm 형식으로 입력해 주세요.');
+  db.update(dayItems).set({ startTime: startTime.trim() || null, memo: memo.trim() || null }).where(eq(dayItems.id, id)).run();
 }

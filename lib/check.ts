@@ -1,4 +1,8 @@
+import { appleCategory, uniqueApplePlaces, type ApplePlace } from './applePlaces.ts';
+import { cityTimeZone } from './cities.ts';
+import { convertAmount, parseRate, parseWeather, timeDifference, tripForecast, weatherLabel, weatherSummary } from './travelTools.ts';
 // node lib/check.ts — 프레임워크 없는 자체 점검. RN 을 import 하지 않는 순수 로직만 다룬다.
+import { dashedRoutes, directionsUrl, mapCamera, mapData, validCoord, validTime } from './map.ts';
 import { BACKUP_FORMAT, parseBackup, planImport, type TripPayload } from './backup.ts';
 import { cellState, datesBetween, dayDiff, monthGrid, months, pickDate, toISO, tripLength } from './calendar.ts';
 import { dayMeta, daysUntil, ddayLabel, tripBucket } from './date.ts';
@@ -296,3 +300,74 @@ eq(noDay.expenses[0].tripDayId, null, 'null 은 그대로 null');
 eq(noDay.expenses[0].placeId, null);
 
 console.log('lib check: 통과');
+
+// ── 지도: 일차·순번·누락 좌표·날짜변경선·입력 검증 ──
+const mapped = mapData(sections);
+same(mapped.pins.map((p) => [p.id, p.order]), [['i1', 1], ['i2', 2]]);
+eq(mapped.routes.length, 1);
+eq(mapData(sections, 2).pins.length, 0, '빈 일차 필터');
+eq(mapData(sections, 3).pins.length, 0, '좌표 없는 일차');
+const gapSection = [{ ...sections[0], data: [sections[0].data[0], sections[2].data[0], sections[0].data[1]] }];
+same(mapData(gapSection).pins.map((p) => p.order), [1, 3], '좌표 없는 방문도 순번 유지');
+eq(mapData(gapSection).routes.length, 0, '좌표 없는 방문을 가로질러 연결하지 않음');
+ok(validCoord(0, 0), '적도·본초자오선 좌표');
+ok(!validCoord(null, 0) && !validCoord(NaN, 0) && !validCoord(91, 0) && !validCoord(0, 181), '유효하지 않은 좌표 제외');
+const across = mapCamera([{ lat: 0, lng: 179 }, { lat: 0, lng: -179 }], null, 360, 320);
+ok(Math.abs(across.coordinates.longitude) === 180 && across.zoom > 6, '날짜변경선 주변은 좁게 맞춤');
+eq(mapCamera([], busanStation, 360, 320).coordinates.latitude, busanStation.lat);
+eq(mapCamera([], null, 360, 320).zoom, 1);
+eq(mapCamera([busanStation], null, 360, 320).zoom, 15, '핀 하나의 최대 확대');
+const dashed = dashedRoutes(mapped.routes, 12, [4, 6]);
+ok(dashed.length > 1 && dashed.length <= 512, '점선은 유한 개의 짧은 선분');
+ok(dashed.flatMap((p) => p.coordinates).every((p) => validCoord(p.latitude, p.longitude)), '점선 좌표 범위');
+eq(dashedRoutes([{ id: 'same', coordinates: [busanStation, busanStation] }], 15, [4, 6]).length, 0);
+ok(validTime('') && validTime('00:00') && validTime('23:59') && !validTime('24:00') && !validTime('9:30'), '시간 입력 검증');
+ok(directionsUrl({ name: '장소 & 입구', lat: null, lng: null }).includes(encodeURIComponent('장소 & 입구')), '길찾기 검색어 인코딩');
+console.log('map check: 통과');
+
+// ── 여행 도구 ──
+const weatherPayload = { timezone: 'Asia/Tokyo', daily: { time: ['2026-09-09', '2026-09-10'], weather_code: [0, 63], temperature_2m_min: [20, null], temperature_2m_max: [29, 25], precipitation_probability_max: [0, null] } };
+const weather = parseWeather(weatherPayload);
+eq(weather.days.length, 2);
+eq(weather.days[1].low, null, '누락된 온도를 0으로 만들지 않는다');
+eq(weather.days[1].rain, null, '누락된 강수 확률을 0으로 만들지 않는다');
+eq(tripForecast(weather, '2026-09-10', '2026-09-15').length, 1, '여행 날짜와 예보의 교집합');
+eq(tripForecast(weather, '2026-10-01', '2026-10-03').length, 0, '예보 범위 밖은 추측하지 않음');
+eq(weatherSummary(weather.days[0]), '맑음 · 20° / 29°');
+eq(weatherLabel(99), '뇌우');
+eq(weatherLabel(null), '날씨 정보 없음');
+const rejects = (run: () => unknown) => { try { run(); return false; } catch { return true; } };
+ok(rejects(() => parseWeather({})), '잘못된 날씨 응답 거절');
+ok(rejects(() => parseWeather({ ...weatherPayload, timezone: 'Unknown/City' })), '잘못된 시간대 거절');
+ok(rejects(() => parseWeather({ ...weatherPayload, daily: { ...weatherPayload.daily, temperature_2m_min: [] } })), '일별 배열 길이 불일치 거절');
+eq(parseRate({ date: '2026-09-07', base: 'JPY', quote: 'KRW', rate: 9.5 }, 'JPY', 'KRW').rate, 9.5);
+ok(rejects(() => parseRate({ date: '2026-09-07', base: 'USD', quote: 'KRW', rate: 9.5 }, 'JPY', 'KRW')), '다른 통화쌍 응답 거절');
+ok(rejects(() => parseRate({ date: '2026-02-30', base: 'JPY', quote: 'KRW', rate: -1 }, 'JPY', 'KRW')), '잘못된 날짜와 음수 환율 거절');
+eq(convertAmount('100.50', 9.5), 954.75);
+eq(convertAmount('0', 9.5), 0);
+eq(convertAmount('-1', 9.5), null);
+eq(convertAmount('12abc', 9.5), null);
+eq(convertAmount('', 9.5), null);
+eq(convertAmount('10', Infinity), null);
+eq(timeDifference(new Date('2026-07-01T12:00:00Z'), 'Europe/Paris'), '한국보다 7시간 느려요', '여름 서머타임');
+eq(timeDifference(new Date('2026-01-01T12:00:00Z'), 'Europe/Paris'), '한국보다 8시간 느려요', '겨울 시차');
+eq(timeDifference(new Date('2026-01-01T12:00:00Z'), 'Asia/Kolkata'), '한국보다 3시간 30분 느려요');
+eq(timeDifference(new Date(), 'Asia/Tokyo'), '한국과 시차가 없어요');
+eq(cityTimeZone('파리', 'FR'), 'Europe/Paris');
+eq(cityTimeZone('모르는 도시', 'FR'), undefined, '도시를 모르면 국가만으로 시간대를 추측하지 않음');
+console.log('travel tools check: 통과');
+
+// Apple 결과의 유효성, 카테고리, 중복 및 백업 참조 유지.
+const applePlace: ApplePlace = { applePlaceId: 'apple-1', name: '카페', address: '주소', region: '도쿄', countryCode: 'JP', currency: 'JPY', lat: 35, lng: 139, poiCategory: 'MKPOICategoryCafe' };
+eq(appleCategory(applePlace.poiCategory), 'cafe');
+eq(appleCategory('MKPOICategoryPublicTransport'), 'transport');
+eq(appleCategory('unknown'), 'etc');
+eq(uniqueApplePlaces([applePlace, applePlace, { ...applePlace, lat: NaN }], false).length, 1);
+eq(uniqueApplePlaces([applePlace, { ...applePlace, applePlaceId: 'apple-2' }], true).length, 1);
+eq(uniqueApplePlaces([applePlace, { ...applePlace, applePlaceId: 'apple-2', region: '다른 지역' }], true).length, 2);
+const applePayload: TripPayload = { trip: { id: 'apple-trip' }, tripDays: [{ id: 'apple-day', tripId: 'apple-trip' }], dayItems: [{ id: 'apple-item', tripDayId: 'apple-day', placeId: 'old-apple' }], savedPlaces: [{ id: 'apple-saved', tripId: 'apple-trip', placeId: 'old-apple' }], expenses: [], checklistItems: [], places: [{ id: 'old-apple', applePlaceId: 'apple-1', name: '카페' }] };
+const applePlan = planImport(applePayload, { tripIds: new Set(['apple-trip']), placeByGoogleId: new Map(), placeByAppleId: new Map([['apple-1', 'cached-apple']]) }, () => 'fresh-apple');
+eq(applePlan.places.length, 0);
+eq(applePlan.dayItems[0].placeId, 'cached-apple');
+eq(applePlan.savedPlaces[0].placeId, 'cached-apple');
+console.log('apple places check: 통과');

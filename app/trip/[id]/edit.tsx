@@ -4,16 +4,18 @@ import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import PlaceMap from '../../../components/PlaceMap';
+import { mapData } from '../../../lib/map';
 import { ScreenHeader } from '../../../components/ui';
 import { db } from '../../../db';
 import { deleteItems, moveItemsToDay, reorderDay, toggleVisited } from '../../../db/dayItems';
-import { dayItems, places, tripDays } from '../../../db/schema';
+import { dayItems, places, tripDays, trips } from '../../../db/schema';
 import { dayMeta } from '../../../lib/date';
 import { groupByDay, type DaySection } from '../../../lib/itinerary';
 import { moveItem, sortByDistance } from '../../../lib/reorder';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { useTripId } from '../../../lib/useTripId';
-import { colors, rounded, sizing, spacing, type as t } from '../../../theme';
+import { colors, mapStyle, rounded, sizing, spacing, type as t } from '../../../theme';
 
 export default function EditItinerary() {
   const id = useTripId();
@@ -22,6 +24,7 @@ export default function EditItinerary() {
   const [selected, setSelected] = useState<string[]>([]);
   const [movingTo, setMovingTo] = useState(false);
 
+  const trip = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id])?.[0];
   const rows = useDbQuery(
     () =>
       db
@@ -68,9 +71,8 @@ export default function EditItinerary() {
     <View style={s.screen}>
       <ScreenHeader title="일정 편집" action="완료" onAction={() => router.back()} />
 
-      {/* react-native-maps 미설치 (design.md §6). 자리는 확보한다 */}
       <View style={s.map}>
-        <Text style={s.mapLabel}>지도 · 순번 + 경로</Text>
+        <PlaceMap {...mapData(sections)} center={trip?.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null} selectedIds={selected} onPinPress={toggleSelect} />
       </View>
 
       <SectionList
@@ -195,14 +197,12 @@ export default function EditItinerary() {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   map: {
-    height: 120,
+    height: mapStyle.collapsedHeight,
     marginHorizontal: spacing.gutter,
     borderRadius: rounded.lg,
     backgroundColor: colors.surfaceCard,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  mapLabel: { ...t.caption, color: colors.muted },
 
   list: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
   dayHeader: { paddingTop: spacing.lg, paddingBottom: spacing.xs, gap: spacing.xxs },

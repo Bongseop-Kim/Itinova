@@ -5,7 +5,7 @@ export const BACKUP_FORMAT = 'itinova.backup';
 export const BACKUP_VERSION = 1;
 
 export type Row = Record<string, unknown> & { id: string };
-export type PlaceRow = Row & { googlePlaceId?: string | null };
+export type PlaceRow = Row & { googlePlaceId?: string | null; applePlaceId?: string | null };
 
 export type TripPayload = {
   trip: Row;
@@ -50,6 +50,7 @@ export type Existing = {
   tripIds: ReadonlySet<string>;
   /** google_place_id → 기존 place id. 같은 장소를 중복 저장하지 않는다. */
   placeByGoogleId: ReadonlyMap<string, string>;
+  placeByAppleId?: ReadonlyMap<string, string>;
 };
 
 export type ImportPlan = {
@@ -86,7 +87,8 @@ export function planImport(payload: TripPayload, existing: Existing, newId: () =
   const places: PlaceRow[] = [];
   for (const place of payload.places) {
     const gid = place.googlePlaceId;
-    const cached = gid ? existing.placeByGoogleId.get(gid) : undefined;
+    const cached = (place.applePlaceId ? existing.placeByAppleId?.get(place.applePlaceId) : undefined)
+      ?? (gid ? existing.placeByGoogleId.get(gid) : undefined);
     if (cached) {
       placeMap.set(place.id, cached);
     } else {

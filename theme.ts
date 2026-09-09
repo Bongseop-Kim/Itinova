@@ -116,3 +116,9 @@ export const motion = {
 
 // 태블릿은 컬럼을 늘리지 않고 콘텐츠 최대 폭만 잡는다.
 export const layout = { contentMaxWidth: 560 } as const;
+
+export const mapStyle = {
+  collapsedHeight: 160, expandedHeight: 320,
+  pinSize: 28, selectedPinSize: 34, pinBorderWidth: 2,
+  routeWidth: 2, lineDashPattern: [4, 6] as const,
+} as const;

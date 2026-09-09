@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -16,6 +16,7 @@ import { colors, rounded, sizing, spacing, type as t } from '../../../../theme';
 export default function NewExpense() {
   const id = useTripId();
   const router = useRouter();
+  const { day, placeId } = useLocalSearchParams<{ day?: string; placeId?: string }>();
 
   const tripRows = useDbQuery(
     () => db.select({ currency: trips.currency }).from(trips).where(eq(trips.id, id)),
@@ -31,7 +32,7 @@ export default function NewExpense() {
   const [currency, setCurrency] = useState(tripCurrency);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
-  const [dayIndex, setDayIndex] = useState<number>();
+  const [dayIndex, setDayIndex] = useState<number | undefined>(day && /^\d+$/.test(day) && Number(day) > 0 ? Number(day) : undefined);
   const [method, setMethod] = useState<string>(PAYMENT_METHODS[0]);
 
   const parsed = Number(amount.replace(/[^0-9.]/g, ''));
@@ -42,6 +43,7 @@ export default function NewExpense() {
     createExpense({
       tripId: id,
       dayIndex,
+      placeId,
       title,
       category,
       currency,

@@ -64,7 +64,7 @@ export function exportAllJson(): string {
 
 function readExisting(): Existing {
   const cached = db
-    .select({ id: places.id, googlePlaceId: places.googlePlaceId })
+    .select({ id: places.id, googlePlaceId: places.googlePlaceId, applePlaceId: places.applePlaceId })
     .from(places)
     .all();
   return {
@@ -72,6 +72,7 @@ function readExisting(): Existing {
     placeByGoogleId: new Map(
       cached.filter((p) => p.googlePlaceId).map((p) => [p.googlePlaceId!, p.id]),
     ),
+    placeByAppleId: new Map(cached.filter((p) => p.applePlaceId).map((p) => [p.applePlaceId!, p.id])),
   };
 }
 

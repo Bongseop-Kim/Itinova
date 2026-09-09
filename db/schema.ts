@@ -45,10 +45,11 @@ export const dayItems = sqliteTable('day_items', {
   visited: integer('visited', { mode: 'boolean' }).notNull().default(false),
 });
 
-// Google Places 응답 캐시. 오프라인 조회 + API 호출 절감.
+// 검색 후 선택한 장소. Apple과 Google 식별자를 구분한다.
 export const places = sqliteTable('places', {
   id: id(),
   googlePlaceId: text('google_place_id').unique(),    // is_custom 장소는 null
+  applePlaceId: text('apple_place_id').unique(),
   name: text('name').notNull(),
   category: text('category', { enum: ['attraction', 'food', 'cafe', 'stay', 'transport', 'etc'] }),
   address: text('address'),
