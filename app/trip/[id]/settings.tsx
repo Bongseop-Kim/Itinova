@@ -64,9 +64,20 @@ export default function TripSettings() {
 
   const applyDates = () => {
     if (!range.start || !range.end) return;
-    changeTripDates(id, range.start, range.end);
-    setEditingDates(false);
-    setRange({});
+    const { start, end } = range;
+    const apply = () => {
+      changeTripDates(id, start, end);
+      setEditingDates(false);
+      setRange({});
+    };
+    if (warning) {
+      Alert.alert('여행 기간을 줄일까요?', warning, [
+        { text: '취소', style: 'cancel' },
+        { text: '확인', onPress: apply },
+      ]);
+    } else {
+      apply();
+    }
   };
 
   const confirmDelete = () =>
