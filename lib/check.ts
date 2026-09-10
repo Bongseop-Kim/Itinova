@@ -11,6 +11,8 @@ import { formatKm, haversineKm } from './geo.ts';
 import { groupByDay, type JoinedRow } from './itinerary.ts';
 import { moveItem, sortByDistance, sortOrders } from './reorder.ts';
 import { dateChangeWarning, planDateChange, type CurrentDay } from './tripDates.ts';
+import { checklistSections } from '../db/templates.ts';
+import { expenseDay, initialExpenseCurrency } from './expense.ts';
 
 // ponytail: @types/node 를 끌어오지 않기 위한 최소 어서션. 프레임워크 없음.
 const fail = (msg: string): never => {
@@ -187,6 +189,24 @@ eq(sortByDistance([] as { coord: { lat: number; lng: number } | null }[]).length
 same(sortOrders(3), [1000, 2000, 3000]);
 
 // ── §4.1 날짜 변경 ──
+same(checklistSections([]), [
+  { title: '필수 준비물', data: [] },
+  { title: '기본 짐싸기', data: [] },
+], '빈 기본 섹션은 유지');
+const customChecklist = [{ category: '사용자', label: '우산' }];
+same(checklistSections(customChecklist).at(-1)?.data, customChecklist, '사용자 카테고리 표시');
+ok(!checklistSections([]).some((section) => section.title === '사용자'), '빈 사용자 카테고리는 제거');
+eq(initialExpenseCurrency(undefined, undefined), undefined, '조회 전에는 통화 미정');
+eq(initialExpenseCurrency(undefined, 'THB'), 'THB', '여행 통화로 초기화');
+eq(initialExpenseCurrency('KRW', 'THB'), 'KRW', '사용자가 고른 통화 유지');
+eq(initialExpenseCurrency('THB', 'USD'), 'THB', '재조회가 초기 통화를 덮어쓰지 않음');
+eq(expenseDay('2', 3), 2);
+eq(expenseDay('3', 3), 3, '마지막 일차 허용');
+for (const invalidDay of [undefined, '', '0', '-1', '1.5', 'abc', '4']) {
+  eq(expenseDay(invalidDay, 3), undefined, '잘못되거나 초과한 일차는 미지정');
+}
+eq(expenseDay('1', 0), undefined, '일차 조회 전 미지정');
+
 const days3: CurrentDay[] = [
   { dayIndex: 1, date: '2026-09-09' },
   { dayIndex: 2, date: '2026-09-10' },
