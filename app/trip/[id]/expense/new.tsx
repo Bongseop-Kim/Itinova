@@ -1,14 +1,14 @@
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { BottomCtaBar, Chip, ScreenHeader } from '../../../../components/ui';
 import { db } from '../../../../db';
-import { createExpense, tripDaysQuery } from '../../../../db/expenses';
-import { tripDays, trips } from '../../../../db/schema';
+import { createExpense, expensePlaceQuery, tripDaysQuery } from '../../../../db/expenses';
+import { dayItems, places, savedPlaces, tripDays, trips } from '../../../../db/schema';
 import { dayMeta } from '../../../../lib/date';
-import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '../../../../lib/expense';
+import { expenseDay, initialExpenseCurrency, EXPENSE_CATEGORIES, PAYMENT_METHODS } from '../../../../lib/expense';
 import { useDbQuery } from '../../../../lib/useDbQuery';
 import { useTripId } from '../../../../lib/useTripId';
 import { colors, rounded, sizing, spacing, type as t } from '../../../../theme';
@@ -25,21 +25,26 @@ export default function NewExpense() {
   );
   const days = useDbQuery(() => tripDaysQuery(id), [tripDays], [id]);
 
-  const tripCurrency = tripRows?.[0]?.currency ?? 'KRW';
-  const currencies = [...new Set([tripCurrency, 'KRW'])];
+  const linkedPlaces = useDbQuery(() => expensePlaceQuery(id, placeId), [places, savedPlaces, dayItems, tripDays], [id, placeId]);
+  const tripCurrency = tripRows?.[0]?.currency;
+  const currencies = [...new Set([tripCurrency, 'KRW'].filter((c): c is string => !!c))];
 
   const [amount, setAmount] = useState('');
-  const [currency, setCurrency] = useState(tripCurrency);
+  const [currency, setCurrency] = useState<string>();
+  useEffect(() => {
+    setCurrency((current) => initialExpenseCurrency(current, tripCurrency));
+  }, [tripCurrency]);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
-  const [dayIndex, setDayIndex] = useState<number | undefined>(day && /^\d+$/.test(day) && Number(day) > 0 ? Number(day) : undefined);
+  const [selectedDay, setSelectedDay] = useState<string | null>();
+  const dayIndex = expenseDay(selectedDay === undefined ? day : selectedDay ?? undefined, days?.length ?? 0);
   const [method, setMethod] = useState<string>(PAYMENT_METHODS[0]);
 
   const parsed = Number(amount.replace(/[^0-9.]/g, ''));
-  const valid = parsed > 0 && !!title.trim();
+  const valid = Number.isFinite(parsed) && parsed > 0 && !!title.trim() && !!currency && !!days;
 
   const submit = () => {
-    if (!valid) return;
+    if (!valid || !currency) return;
     createExpense({
       tripId: id,
       dayIndex,
@@ -98,14 +103,14 @@ export default function NewExpense() {
             <Chip
               label="미지정"
               selected={dayIndex == null}
-              onPress={() => setDayIndex(undefined)}
+              onPress={() => setSelectedDay(null)}
             />
             {(days ?? []).map((d) => (
               <Chip
                 key={d.dayIndex}
                 label={`day ${d.dayIndex} · ${dayMeta(d.date)}`}
                 selected={dayIndex === d.dayIndex}
-                onPress={() => setDayIndex(d.dayIndex)}
+                onPress={() => setSelectedDay(String(d.dayIndex))}
               />
             ))}
           </View>
@@ -119,7 +124,7 @@ export default function NewExpense() {
           </View>
         </Field>
 
-        {/* 연결 장소는 BS1(장소 퀵 액션)에서 들어올 때 채운다 — 지금은 진입 경로가 없다 */}
+        {linkedPlaces?.[0] ? <Text style={s.placeName}>연결 장소 · {linkedPlaces[0].name}</Text> : null}
       </ScrollView>
 
       <BottomCtaBar label="저장" onPress={submit} disabled={!valid} />
@@ -150,6 +155,7 @@ const s = StyleSheet.create({
 
   field: { paddingTop: spacing.md, gap: spacing.xs },
   fieldLabel: { ...t.captionUpper, color: colors.muted },
+  placeName: { ...t.bodySm, color: colors.muted },
   input: {
     ...t.bodyMd,
     color: colors.ink,

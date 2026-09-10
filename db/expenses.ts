@@ -1,7 +1,17 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, exists, or } from 'drizzle-orm';
 
 import { db, newId } from './index';
-import { expenses, places, tripDays } from './schema';
+import { dayItems, expenses, places, savedPlaces, tripDays } from './schema';
+
+export const expensePlaceQuery = (tripId: string, placeId: string | undefined) =>
+  db.select({ id: places.id, name: places.name }).from(places).where(and(
+    eq(places.id, placeId ?? ''),
+    or(
+      exists(db.select().from(savedPlaces).where(and(eq(savedPlaces.tripId, tripId), eq(savedPlaces.placeId, places.id)))),
+      exists(db.select().from(dayItems).innerJoin(tripDays, eq(dayItems.tripDayId, tripDays.id))
+        .where(and(eq(tripDays.tripId, tripId), eq(dayItems.placeId, places.id)))),
+    ),
+  ));
 
 /** dayIndex 는 trip_days 를 통해 얻는다. 일차가 삭제되면 trip_day_id 가 null 이 되어 '미지정' 이 된다. */
 export const expensesQuery = (tripId: string) =>
@@ -43,7 +53,7 @@ export function createExpense(input: {
       id: newId(),
       tripId: input.tripId,
       tripDayId: day?.id ?? null,
-      placeId: input.placeId && db.select({ id: places.id }).from(places).where(eq(places.id, input.placeId)).all()[0] ? input.placeId : null,
+      placeId: expensePlaceQuery(input.tripId, input.placeId).all()[0]?.id ?? null,
       title: input.title.trim(),
       category: input.category,
       currency: input.currency,

@@ -3,6 +3,15 @@
 export const EXPENSE_CATEGORIES = ['교통', '식비', '카페', '숙박', '관광', '쇼핑', '기타'] as const;
 export const PAYMENT_METHODS = ['카드', '현금'] as const;
 
+export const initialExpenseCurrency = (current: string | undefined, tripCurrency: string | undefined) =>
+  current ?? tripCurrency;
+
+export function expenseDay(day: string | undefined, dayCount: number): number | undefined {
+  return day && /^\d+$/.test(day) && Number(day) > 0 && Number(day) <= dayCount
+    ? Number(day)
+    : undefined;
+}
+
 export type Expense = {
   id: string;
   title: string;
