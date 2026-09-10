@@ -1,12 +1,18 @@
-import Screen from '../../components/Screen';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+
+import { BottomCtaBar, ScreenHeader } from '../../components/ui';
+import { colors, spacing, type as t } from '../../theme';
 
 export default function AiResult() {
+  const router = useRouter();
   return (
-    <Screen
-      id="S08  ·  /ai/result"
-      title="생성 결과 미리보기"
-      note="일차별 초안, 장소별 제외, 다시 생성, 생성 근거 1줄, 정확성 고지. 저장 시점에만 DB 적재(트랜잭션). 첫 진입 코치마크 C05."
-      to={[['/trip/1/itinerary', '내 여행으로 저장  →  S10']]}
-    />
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <ScreenHeader title="AI 추천 일정" action="홈으로" onAction={() => router.navigate('/')} />
+      <Text style={{ ...t.bodyMd, color: colors.muted, padding: spacing.gutter, flex: 1 }}>
+        AI 일정 추천은 준비 중이에요.
+      </Text>
+      <BottomCtaBar label="직접 일정 만들기" onPress={() => router.navigate('/create/destination')} />
+    </View>
   );
 }

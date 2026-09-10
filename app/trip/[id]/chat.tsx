@@ -1,13 +1,17 @@
-import Screen from '../../../components/Screen';
-import { useTripId } from '../../../lib/useTripId';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+
+import { ScreenHeader } from '../../../components/ui';
+import { colors, spacing, type as t } from '../../../theme';
 
 export default function Chat() {
-  const id = useTripId();
+  const router = useRouter();
   return (
-    <Screen
-      id={`S19  ·  /trip/${id}/chat`}
-      title="AI 채팅"
-      note="여행 컨텍스트 배지, 추천 질문 칩(일정 상태에 따라 정적 분기), 직전 8턴만 전송. 응답 내 장소 카드 → 일정에 담기(BS3). 하단 정확성 고지 상시."
-    />
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <ScreenHeader title="AI 채팅" action="뒤로" onAction={() => router.back()} />
+      <Text style={{ ...t.bodyMd, color: colors.muted, padding: spacing.gutter }}>
+        AI 채팅은 준비 중이에요.
+      </Text>
+    </View>
   );
 }

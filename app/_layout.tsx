@@ -57,6 +57,8 @@ export default function RootLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
+      <Stack.Screen name="ai/ask" options={{ headerShown: false }} />
+      <Stack.Screen name="ai/result" options={{ headerShown: false }} />
       {/* S03 은 바텀시트라 뒤가 비쳐야 한다 — 카드 모달이 아니라 transparentModal */}
       <Stack.Screen
         name="create"

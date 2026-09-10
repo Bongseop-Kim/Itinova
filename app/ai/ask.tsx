@@ -1,12 +1,18 @@
-import Screen from '../../components/Screen';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+
+import { BottomCtaBar, ScreenHeader } from '../../components/ui';
+import { colors, spacing, type as t } from '../../theme';
 
 export default function AiAsk() {
+  const router = useRouter();
   return (
-    <Screen
-      id="S07  ·  /ai/ask"
-      title="AI 질문 5단계"
-      note="단일 화면 + step 상태. ① 도시 ② 기간 ③ 동행(복수) ④ 스타일(복수) ⑤ 밀도."
-      to={[['/ai/result', '5단계 완료  ·  생성  →  S08']]}
-    />
+    <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <ScreenHeader title="AI 일정 추천" action="뒤로" onAction={() => router.back()} />
+      <Text style={{ ...t.bodyMd, color: colors.muted, padding: spacing.gutter, flex: 1 }}>
+        AI 일정 추천은 준비 중이에요.
+      </Text>
+      <BottomCtaBar label="직접 일정 만들기" onPress={() => router.navigate('/create/destination')} />
+    </View>
   );
 }
