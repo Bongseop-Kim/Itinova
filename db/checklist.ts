@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { db, newId } from './index';
 import { checklistItems } from './schema';
@@ -22,7 +22,7 @@ export function addChecklistItem(tripId: string, category: string, label: string
   const last = db
     .select({ sortOrder: checklistItems.sortOrder })
     .from(checklistItems)
-    .where(eq(checklistItems.tripId, tripId))
+    .where(and(eq(checklistItems.tripId, tripId), eq(checklistItems.category, category)))
     .orderBy(asc(checklistItems.sortOrder))
     .all()
     .at(-1);

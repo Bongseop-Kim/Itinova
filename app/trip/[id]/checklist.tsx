@@ -9,23 +9,16 @@ import {
   toggleChecklistItem,
 } from '../../../db/checklist';
 import { checklistItems } from '../../../db/schema';
+import { checklistSections } from '../../../db/templates';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { useTripId } from '../../../lib/useTripId';
 import { colors, rounded, sizing, spacing, type as t } from '../../../theme';
-
-type Item = { id: string; category: string; label: string; done: boolean };
 
 export default function Checklist() {
   const id = useTripId();
   const rows = useDbQuery(() => checklistQuery(id), [checklistItems], [id]);
 
-  // 카테고리는 데이터가 정한다 — 템플릿 시드가 만들고, 사용자가 항목을 지우면 섹션도 사라진다.
-  const sections: { title: string; data: Item[] }[] = [];
-  for (const row of rows ?? []) {
-    let section = sections.find((s2) => s2.title === row.category);
-    if (!section) sections.push((section = { title: row.category, data: [] }));
-    section.data.push(row);
-  }
+  const sections = checklistSections(rows ?? []);
 
   const done = (rows ?? []).filter((r) => r.done).length;
   const total = rows?.length ?? 0;
