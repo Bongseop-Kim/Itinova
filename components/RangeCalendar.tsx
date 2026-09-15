@@ -1,4 +1,4 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { cellState, months, pickDate, todayISO, type Cell, type Month } from '../lib/calendar';
 import { colors, rounded, sizing, spacing, type as t } from '../theme';
@@ -6,24 +6,34 @@ import { colors, rounded, sizing, spacing, type as t } from '../theme';
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export type Range = { start?: string; end?: string };
+export const CALENDAR_MONTHS = 6;
 
 /** S05 여행 생성과 S21 날짜 변경이 함께 쓴다. */
 export default function RangeCalendar({
   range,
   onChange,
-  monthCount = 12,
-  scrollEnabled = true,
+  monthCount = CALENDAR_MONTHS,
+  embedded = false,
 }: {
   range: Range;
   onChange: (next: Range) => void;
   monthCount?: number;
-  scrollEnabled?: boolean;
+  embedded?: boolean;
 }) {
   const data = months(monthCount);
   const today = todayISO();
+  const content = data.map((month) => (
+    <MonthBlock
+      key={month.label}
+      month={month}
+      range={range}
+      today={today}
+      onPick={(date) => onChange(pickDate(range, date))}
+    />
+  ));
 
   return (
-    <View style={s.wrap}>
+    <View style={embedded ? undefined : s.wrap}>
       <View style={s.weekdays}>
         {WEEKDAYS.map((w) => (
           <Text key={w} style={s.weekday}>
@@ -31,20 +41,7 @@ export default function RangeCalendar({
           </Text>
         ))}
       </View>
-      <FlatList
-        data={data}
-        scrollEnabled={scrollEnabled}
-        keyExtractor={(m) => m.label}
-        contentContainerStyle={s.list}
-        renderItem={({ item }) => (
-          <MonthBlock
-            month={item}
-            range={range}
-            today={today}
-            onPick={(date) => onChange(pickDate(range, date))}
-          />
-        )}
-      />
+      {embedded ? <View style={s.list}>{content}</View> : <ScrollView contentContainerStyle={s.list}>{content}</ScrollView>}
     </View>
   );
 }

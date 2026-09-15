@@ -104,7 +104,7 @@ export const chatMessages = sqliteTable('chat_messages', {
   createdAt: createdAt(),
 });
 
-// 단일 행 KV. 언어·단위·기본 통화.
+// 단일 행 KV. 온보딩·코치마크·날짜 형식.
 export const appSettings = sqliteTable('app_settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),

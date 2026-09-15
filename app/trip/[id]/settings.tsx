@@ -135,7 +135,7 @@ export default function TripSettings() {
 
         {editingDates ? (
           <View style={s.calendar}>
-            <RangeCalendar range={range} onChange={setRange} monthCount={4} scrollEnabled={false} />
+            <RangeCalendar range={range} onChange={setRange} embedded />
             {warning ? <Text style={s.warning}>{warning}</Text> : null}
             <Pressable
               onPress={applyDates}
@@ -240,7 +240,6 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
 
   calendar: {
-    height: 520,
     marginTop: spacing.xs,
     gap: spacing.xs,
   },

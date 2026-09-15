@@ -7,7 +7,7 @@ import { BottomCtaBar } from '../components/ui';
 import { ONBOARDED, setSetting } from '../db/settings';
 import { colors, rounded, spacing, type as t } from '../theme';
 
-const STEPS = 3;
+const STEPS = 2;
 
 export default function Onboarding() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function Onboarding() {
 
   return (
     <View style={[s.screen, { paddingTop: insets.top }]}>
-      {/* 건너뛰기를 두지 않는다 — 3화면뿐이고 2단계는 반드시 한 번 봐야 한다 (design.md §2.0) */}
+      {/* 건너뛰기를 두지 않는다 — 로컬 데이터 고지는 반드시 한 번 본다 (design.md §2.0) */}
       <View style={s.header}>
         <View style={s.dots}>
           {Array.from({ length: STEPS }, (_, i) => (
@@ -35,10 +35,9 @@ export default function Onboarding() {
       <ScrollView contentContainerStyle={s.content}>
         {step === 0 ? <ValueProp /> : null}
         {step === 1 ? <LocalDataNotice /> : null}
-        {step === 2 ? <LocationNotice /> : null}
       </ScrollView>
 
-      <BottomCtaBar label={['다음', '알겠어요', '시작하기'][step]} onPress={next} />
+      <BottomCtaBar label={['다음', '시작하기'][step]} onPress={next} />
     </View>
   );
 }
@@ -73,24 +72,6 @@ function LocalDataNotice() {
       </View>
       <Text style={s.body}>
         여행 설정의 <Text style={s.bodyStrong}>JSON 내보내기</Text>로 백업할 수 있어요.
-      </Text>
-      <View style={s.figure} />
-    </>
-  );
-}
-
-function LocationNotice() {
-  return (
-    <>
-      <Text style={s.title}>주변 장소를 찾을 때{'\n'}위치를 물어볼게요</Text>
-      <View style={s.callout}>
-        <Text style={s.calloutBody}>
-          위치는 <Text style={s.bodyStrong}>장소 검색과 지도 표시</Text>에만 씁니다.{'\n'}
-          이동 경로를 기록하거나 저장하지 않습니다.
-        </Text>
-      </View>
-      <Text style={s.body}>
-        지금은 묻지 않습니다. 장소를 처음 검색할 때 기기가 물어봐요.
       </Text>
       <View style={s.figure} />
     </>

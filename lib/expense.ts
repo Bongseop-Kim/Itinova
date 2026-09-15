@@ -19,6 +19,7 @@ export type Expense = {
   currency: string;
   amount: number;
   dayIndex: number | null; // 일차가 삭제되면 null — '미지정' 그룹 (§4.1)
+  date: string | null;
 };
 
 /** 통화별 합계. 해외 여행은 현지 통화와 원화가 섞인다. */

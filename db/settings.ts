@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from './index';
 import { appSettings } from './schema';
 
-/** 단일 행 KV (design.md §4 `app_settings`). 언어·단위·기본 통화·온보딩 완료 여부. */
+/** 단일 행 KV (design.md §4 `app_settings`). 온보딩·코치마크·날짜 형식. */
 export const settingsQuery = () => db.select().from(appSettings);
 
 export function setSetting(key: string, value: string): void {
@@ -13,3 +13,5 @@ export function setSetting(key: string, value: string): void {
 }
 
 export const ONBOARDED = 'onboarded';
+export const DATE_FORMAT = 'date_format';
+export type { DateFormat } from '../lib/date';

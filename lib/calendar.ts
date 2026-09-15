@@ -29,7 +29,7 @@ export function monthGrid(year: number, month: number): Month {
   return { year, month, label: `${year}년 ${month}월`, weeks };
 }
 
-/** from 달부터 count 개월. S05 는 세로로 스크롤하며 두 달씩 보인다. */
+/** from 달부터 count 개월. S05/S21 은 세로로 6개월을 스크롤한다. */
 export function months(count: number, from = new Date()): Month[] {
   return Array.from({ length: count }, (_, i) => {
     const d = new Date(from.getFullYear(), from.getMonth() + i, 1);

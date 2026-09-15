@@ -3,15 +3,28 @@
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+export type DateFormat = 'ymd' | 'md';
+export const DEFAULT_DATE_FORMAT: DateFormat = 'ymd';
+
 const parse = (date: string) => {
   const [y, m, d] = date.split('-').map(Number);
   return { y, m, d, js: new Date(y, m - 1, d) };
 };
 
-/** '2026-09-09' → '9.9/수' (S10 일차 헤더) */
-export function dayMeta(date: string): string {
-  const { m, d, js } = parse(date);
-  return `${m}.${d}/${WEEKDAYS[js.getDay()]}`;
+/** '2026-09-09' → '2026.9.9' 또는 '9/9'. */
+export function dateLabel(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  const { y, m, d } = parse(date);
+  return format === 'md' ? `${m}/${d}` : `${y}.${m}.${d}`;
+}
+
+export function dateRangeLabel(start: string, end: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  return `${dateLabel(start, format)} ~ ${dateLabel(end, format)}`;
+}
+
+/** S10 일차 헤더. */
+export function dayMeta(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  const { js } = parse(date);
+  return `${dateLabel(date, format)}/${WEEKDAYS[js.getDay()]}`;
 }
 
 /** 오늘로부터 며칠 남았는지. 음수면 지난 여행. */

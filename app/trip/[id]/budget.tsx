@@ -4,7 +4,8 @@ import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { BottomCtaBar, ScreenHeader, SegmentTabs } from '../../../components/ui';
 import { expensesQuery, removeExpense } from '../../../db/expenses';
-import { expenses as expensesTable, tripDays } from '../../../db/schema';
+import { appSettings, expenses as expensesTable, tripDays } from '../../../db/schema';
+import { DATE_FORMAT, settingsQuery } from '../../../db/settings';
 import {
   formatAmount,
   groupByCategory,
@@ -13,6 +14,7 @@ import {
   type Expense,
 } from '../../../lib/expense';
 import { useDbQuery } from '../../../lib/useDbQuery';
+import { dayMeta } from '../../../lib/date';
 import { useTripId } from '../../../lib/useTripId';
 import { colors, rounded, sizing, spacing, type as t } from '../../../theme';
 
@@ -22,6 +24,8 @@ export default function Budget() {
   const id = useTripId();
   const router = useRouter();
   const [mode, setMode] = useState<(typeof MODES)[number]>('일차별');
+  const settings = useDbQuery(settingsQuery, [appSettings], []);
+  const dateFormat = settings?.find((row) => row.key === DATE_FORMAT)?.value === 'md' ? 'md' : 'ymd';
 
   const rows = useDbQuery(() => expensesQuery(id), [expensesTable, tripDays], [id]);
   const list = useMemo<Expense[]>(() => rows ?? [], [rows]);
@@ -30,11 +34,11 @@ export default function Budget() {
   const sections = useMemo(
     () =>
       (mode === '일차별' ? groupByDay(list) : groupByCategory(list)).map((g) => ({
-        title: g.label,
+        title: mode === '일차별' && g.rows[0]?.date ? `${g.label} · ${dayMeta(g.rows[0].date, dateFormat)}` : g.label,
         subtotal: sumByCurrency(g.rows),
         data: g.rows,
       })),
-    [list, mode],
+    [dateFormat, list, mode],
   );
 
   return (

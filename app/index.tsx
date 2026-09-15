@@ -7,9 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomCtaBar } from '../components/ui';
 import { db } from '../db';
 import { appSettings, trips } from '../db/schema';
-import { ONBOARDED, settingsQuery } from '../db/settings';
+import { DATE_FORMAT, ONBOARDED, settingsQuery } from '../db/settings';
 import { todayISO } from '../lib/calendar';
-import { ddayLabel, tripBucket, type Bucket } from '../lib/date';
+import { dateRangeLabel, ddayLabel, tripBucket, type Bucket, type DateFormat } from '../lib/date';
 import { useDbQuery } from '../lib/useDbQuery';
 import { colors, elevation, rounded, spacing, type as t } from '../theme';
 
@@ -40,6 +40,7 @@ export default function Home() {
   // 첫 실행이면 온보딩으로. settings 가 undefined 인 동안은 아무것도 그리지 않는다
   // (로컬 SQLite 는 즉시 반환하므로 깜빡임이 없다).
   const onboarded = settings?.some((row) => row.key === ONBOARDED && row.value === '1');
+  const dateFormat: DateFormat = settings?.find((row) => row.key === DATE_FORMAT)?.value === 'md' ? 'md' : 'ymd';
 
   const today = todayISO();
   const buckets = useMemo(() => {
@@ -86,11 +87,12 @@ export default function Home() {
               trip={trip}
               today={today}
               onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
+              dateFormat={dateFormat}
             />
           ))}
 
-          <Section title="다가오는 여행" trips={buckets.upcoming} today={today} router={router} />
-          <Section title="지난 여행" trips={buckets.past} today={today} router={router} />
+          <Section title="다가오는 여행" trips={buckets.upcoming} today={today} router={router} dateFormat={dateFormat} />
+          <Section title="지난 여행" trips={buckets.past} today={today} router={router} dateFormat={dateFormat} />
         </ScrollView>
       )}
 
@@ -104,11 +106,13 @@ function Section({
   trips: list,
   today,
   router,
+  dateFormat,
 }: {
   title: string;
   trips: Trip[];
   today: string;
   router: ReturnType<typeof useRouter>;
+  dateFormat: DateFormat;
 }) {
   if (!list.length) return null;
   return (
@@ -123,7 +127,7 @@ function Section({
         >
           <Text style={s.cardTitle}>{trip.title}</Text>
           <Text style={s.cardMeta}>
-            {ddayLabel(trip.startDate, today)} · {trip.startDate} ~ {trip.endDate}
+            {ddayLabel(trip.startDate, today)} · {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)}
           </Text>
         </Pressable>
       ))}
@@ -136,17 +140,19 @@ function ActiveTripCard({
   trip,
   today,
   onPress,
+  dateFormat,
 }: {
   trip: Trip;
   today: string;
   onPress: () => void;
+  dateFormat: DateFormat;
 }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={s.activeCard}>
       <Text style={s.activeDday}>{ddayLabel(trip.startDate, today)}</Text>
       <Text style={s.activeTitle}>{trip.title}</Text>
       <Text style={s.activeMeta}>
-        {trip.startDate} ~ {trip.endDate}
+        {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)}
       </Text>
     </Pressable>
   );

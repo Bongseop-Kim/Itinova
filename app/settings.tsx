@@ -17,7 +17,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '../components/ui';
 import { exportAllJson, importTrips } from '../db/backup';
+import { appSettings } from '../db/schema';
+import { DATE_FORMAT, setSetting, settingsQuery } from '../db/settings';
 import { parseBackup } from '../lib/backup';
+import { useDbQuery } from '../lib/useDbQuery';
 import { colors, rounded, sizing, spacing, type as t } from '../theme';
 
 export default function AppSettings() {
@@ -25,6 +28,8 @@ export default function AppSettings() {
   const insets = useSafeAreaInsets();
   const [importing, setImporting] = useState(false);
   const [text, setText] = useState('');
+  const settings = useDbQuery(settingsQuery, [appSettings], []);
+  const dateFormat = settings?.find((row) => row.key === DATE_FORMAT)?.value === 'md' ? 'md' : 'ymd';
 
   const exportAll = async () => {
     const json = exportAllJson();
@@ -107,27 +112,37 @@ export default function AppSettings() {
           </View>
         ) : null}
 
-        <Field label="앱 정보">
-          <View style={s.row}>
-            <Text style={s.rowValue}>버전</Text>
-            <Text style={s.rowAction}>{Constants.expoConfig?.version ?? '—'}</Text>
-          </View>
+        <Field label="표시">
+          <Pressable
+            onPress={() => setSetting(DATE_FORMAT, 'ymd')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: dateFormat === 'ymd' }}
+            style={s.row}
+          >
+            <Text style={s.rowValue}>날짜 형식</Text>
+            <Text style={s.rowAction}>YYYY.M.D{dateFormat === 'ymd' ? ' ✓' : ''}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setSetting(DATE_FORMAT, 'md')}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: dateFormat === 'md' }}
+            style={s.row}
+          >
+            <Text style={s.rowValue}>날짜 형식</Text>
+            <Text style={s.rowAction}>M/D{dateFormat === 'md' ? ' ✓' : ''}</Text>
+          </Pressable>
           <View style={s.row}>
             <Text style={s.rowValue}>언어</Text>
             <Text style={s.rowAction}>한국어</Text>
           </View>
         </Field>
 
-        {/*
-          아직 넣지 않은 것과 이유 (design.md §2.1 대비):
-          · 날짜·거리 형식 — 화면 전체에 배선이 필요한데 지금은 한 가지 표기만 쓴다
-          · 기본 통화 — 여행 생성 시 도시에서 정해진다. 전역 기본값이 필요해지면 그때
-          · 위치 권한 — 위치를 쓰는 기능이 아직 없다 (지도·Places 대기)
-          · 알림 — 알림 기능이 없다
-        */}
-        <Text style={s.note}>
-          날짜 형식 · 기본 통화 · 위치 권한 · 알림 설정은 해당 기능이 붙은 뒤에 열립니다.
-        </Text>
+        <Field label="앱 정보">
+          <View style={s.row}>
+            <Text style={s.rowValue}>버전</Text>
+            <Text style={s.rowAction}>{Constants.expoConfig?.version ?? '—'}</Text>
+          </View>
+        </Field>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -175,6 +190,4 @@ const s = StyleSheet.create({
   ctaOff: { backgroundColor: colors.primaryDisabled },
   ctaLabel: { ...t.button, color: colors.onPrimary },
   ctaLabelOff: { color: colors.muted },
-
-  note: { ...t.caption, color: colors.muted, paddingTop: spacing.section },
 });

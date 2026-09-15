@@ -23,6 +23,7 @@ export const expensesQuery = (tripId: string) =>
       currency: expenses.currency,
       amount: expenses.amount,
       dayIndex: tripDays.dayIndex,
+      date: tripDays.date,
     })
     .from(expenses)
     .leftJoin(tripDays, eq(tripDays.id, expenses.tripDayId))

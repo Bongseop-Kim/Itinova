@@ -5,7 +5,7 @@ import { convertAmount, parseRate, parseWeather, timeDifference, tripForecast, w
 import { dashedRoutes, directionsUrl, mapCamera, mapData, validCoord, validTime } from './map.ts';
 import { BACKUP_FORMAT, parseBackup, planImport, type TripPayload } from './backup.ts';
 import { cellState, datesBetween, dayDiff, monthGrid, months, pickDate, toISO, tripLength } from './calendar.ts';
-import { dayMeta, daysUntil, ddayLabel, tripBucket } from './date.ts';
+import { dateLabel, dateRangeLabel, dayMeta, daysUntil, ddayLabel, tripBucket } from './date.ts';
 import { formatAmount, groupByCategory, groupByDay as groupExpensesByDay, sumByCurrency, type Expense } from './expense.ts';
 import { formatKm, haversineKm } from './geo.ts';
 import { groupByDay, type JoinedRow } from './itinerary.ts';
@@ -40,9 +40,12 @@ eq(formatKm(0.42), '420m', '1km 미만은 m 단위');
 eq(formatKm(1), '1.0km', '경계값 1km 는 km 단위');
 
 // ── 날짜 ──
-eq(dayMeta('2026-09-09'), '9.9/수');
-eq(dayMeta('2026-09-11'), '9.11/금');
-eq(dayMeta('2026-01-01'), '1.1/목', '한 자리 월도 앞자리 0 없이');
+eq(dateLabel('2026-09-09'), '2026.9.9');
+eq(dateLabel('2026-09-09', 'md'), '9/9');
+eq(dateRangeLabel('2026-09-09', '2026-09-11', 'md'), '9/9 ~ 9/11');
+eq(dayMeta('2026-09-09'), '2026.9.9/수');
+eq(dayMeta('2026-09-11', 'md'), '9/11/금');
+eq(dayMeta('2026-01-01'), '2026.1.1/목', '한 자리 월도 앞자리 0 없이');
 
 const today = new Date();
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -86,6 +89,7 @@ eq(monthGrid(2028, 2).weeks.flat().filter(Boolean).length, 29, '2028 은 윤년'
 eq(monthGrid(2026, 2).weeks.flat().filter(Boolean).length, 28);
 
 eq(months(3, new Date(2026, 10, 1)).map((m) => m.label).join(' / '), '2026년 11월 / 2026년 12월 / 2027년 1월', '연말을 넘어간다');
+eq(months(6, new Date(2026, 10, 1)).at(-1)?.label, '2027년 4월', '6개월 범위도 연말을 넘어간다');
 
 // 범위
 eq(dayDiff('2026-09-09', '2026-09-11'), 2);
@@ -129,7 +133,7 @@ eq(ddayLabel('2026-09-09', '2026-09-12'), 'D+3', '지난 여행은 D+');
 // ── 가계부 ──
 const ex = (over: Partial<Expense>): Expense => ({
   id: 'e' + Math.random(), title: '항목', category: '식비',
-  currency: 'KRW', amount: 1000, dayIndex: 1, ...over,
+  currency: 'KRW', amount: 1000, dayIndex: 1, date: '2026-09-09', ...over,
 });
 
 const spend: Expense[] = [

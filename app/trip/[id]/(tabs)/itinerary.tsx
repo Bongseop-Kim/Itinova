@@ -11,7 +11,8 @@ import { weatherSummary } from '../../../../lib/travelTools';
 import { mapData } from '../../../../lib/map';
 import { type Href } from '../../../../components/ui';
 import { db } from '../../../../db';
-import { dayItems, places, tripDays, trips } from '../../../../db/schema';
+import { appSettings, dayItems, places, tripDays, trips } from '../../../../db/schema';
+import { DATE_FORMAT, settingsQuery } from '../../../../db/settings';
 import { categoryLabel } from '../../../../lib/category';
 import { dayMeta } from '../../../../lib/date';
 import { formatKm, haversineKm } from '../../../../lib/geo';
@@ -26,6 +27,8 @@ export default function Itinerary() {
   const insets = useSafeAreaInsets();
   const [selectedItem, setSelectedItem] = useState<string>();
   const [mapExpanded, setMapExpanded] = useState(false);
+  const settings = useDbQuery(settingsQuery, [appSettings], []);
+  const dateFormat = settings?.find((row) => row.key === DATE_FORMAT)?.value === 'md' ? 'md' : 'ymd';
 
   const tripRows = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id]);
   const rows = useDbQuery(
@@ -110,7 +113,7 @@ export default function Itinerary() {
         renderSectionHeader={({ section }) => (
           <View style={s.dayHeader}>
             <Text style={s.dayLabel}>day {section.dayIndex}</Text>
-            <Text style={s.dayMeta}>{dayMeta(section.date)}</Text>
+            <Text style={s.dayMeta}>{dayMeta(section.date, dateFormat)}</Text>
             {weather.data?.days.find((day) => day.date === section.date) && <Text style={s.dayMeta}>{weatherSummary(weather.data.days.find((day) => day.date === section.date)!)}</Text>}
           </View>
         )}

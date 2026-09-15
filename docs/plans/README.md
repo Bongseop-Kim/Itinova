@@ -16,7 +16,6 @@
 
 | # | 파일 | 범위 | 선행 | 외부 의존 |
 | --- | --- | --- | --- | --- |
-| 02 | `02-settings-and-onboarding-policy.md` | S02 설정 결정·날짜 형식, 온보딩 위치 단계 제거, 캘린더 6개월 | 01 | 없음 |
 | 03 | `03-itinerary-drag-and-checklist-categories.md` | S14 드래그(`react-native-sortables`), S16 카테고리 메뉴 | 01 | npm 1개 |
 | 04 | `04-backup-scope.md` | 백업 v2(채팅 포함), 부분 실패 안내 | 01 | 없음 |
 | 05 | `05-subscription-server.md` | Cloud Run `itinova-api`, Apple 검증·알림, Firestore, 세션, `verify` rate limit. (D절 Google Play는 Android 출시 후) | — | GCP·App Store Connect |

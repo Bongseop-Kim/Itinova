@@ -6,9 +6,10 @@ import DayPickerSheet from '../../../../components/DayPickerSheet';
 import { Chip, ScreenHeader } from '../../../../components/ui';
 import { db } from '../../../../db';
 import { savedPlacesQuery } from '../../../../db/places';
-import { dayItems, places, savedPlaces, tripDays, trips } from '../../../../db/schema';
+import { appSettings, dayItems, places, savedPlaces, tripDays, trips } from '../../../../db/schema';
+import { DATE_FORMAT, settingsQuery } from '../../../../db/settings';
 import { categoryLabel } from '../../../../lib/category';
-import { ddayLabel } from '../../../../lib/date';
+import { dateRangeLabel, ddayLabel } from '../../../../lib/date';
 import { useClock } from '../../../../lib/useTravelData';
 import { useDbQuery } from '../../../../lib/useDbQuery';
 import { useTripId } from '../../../../lib/useTripId';
@@ -23,6 +24,8 @@ export default function TripHome() {
   const [category, setCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState<{ placeId: string; name: string }>();
+  const settings = useDbQuery(settingsQuery, [appSettings], []);
+  const dateFormat = settings?.find((row) => row.key === DATE_FORMAT)?.value === 'md' ? 'md' : 'ymd';
   const trip = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id])?.[0];
   const saved = useDbQuery(() => savedPlacesQuery(id), [savedPlaces, places], [id]);
   const scheduled = useDbQuery(() => db.selectDistinct({ placeId: places.id, name: places.name, category: places.category, region: places.region, photoUrl: places.photoUrl }).from(places)
@@ -36,7 +39,7 @@ export default function TripHome() {
         ListHeaderComponent={<View style={s.contentHeader}>
         {trip ? <>
           <View style={s.hero}><Text style={s.heroTitle}>{today > trip.endDate ? '다녀온 여행' : today >= trip.startDate ? '지금 여행 중이에요' : `두근두근, 여행 ${ddayLabel(trip.startDate, today)}`}</Text><Text style={s.heroBody}>{trip.cityName}</Text></View>
-          <Pressable style={s.action} onPress={() => router.push(`/trip/${id}/settings`)} accessibilityRole="button" accessibilityLabel="여행 날짜와 설정 편집"><Text style={s.button}>{trip.startDate} ~ {trip.endDate} · 편집</Text></Pressable>
+          <Pressable style={s.action} onPress={() => router.push(`/trip/${id}/settings`)} accessibilityRole="button" accessibilityLabel="여행 날짜와 설정 편집"><Text style={s.button}>{dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} · 편집</Text></Pressable>
           <View style={s.chips}><Chip label="일정 보기" onPress={() => router.navigate(`/trip/${id}/itinerary`)} /><Chip label="전체 지도" onPress={() => router.push(`/trip/${id}/map`)} /><Chip label="장소 추가" onPress={() => router.push(`/trip/${id}/add-place`)} /></View>
           <Text style={s.title}>이 여행의 장소</Text>
           <Text style={s.body}>일정과 저장함에 담아 둔 장소예요.</Text>
