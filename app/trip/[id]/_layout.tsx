@@ -10,6 +10,7 @@ export default function TripLayout() {
       <Stack.Screen name="add-place" options={{ headerShown: false }} />
       <Stack.Screen name="checklist" options={{ headerShown: false }} />
       <Stack.Screen name="budget" options={{ headerShown: false }} />
+      <Stack.Screen name="chat" options={{ headerShown: false }} />
       <Stack.Screen name="expense/new" options={{ headerShown: false }} />
       <Stack.Screen name="map" options={{ headerShown: false }} />
       <Stack.Screen name="edit" options={{ headerShown: false }} />
