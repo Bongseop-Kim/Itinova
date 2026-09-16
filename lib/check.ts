@@ -12,6 +12,7 @@ import { groupByDay, type JoinedRow } from './itinerary.ts';
 import { moveItem, sortByDistance, sortOrders } from './reorder.ts';
 import { dateChangeWarning, planDateChange, type CurrentDay } from './tripDates.ts';
 import { checklistSections } from '../db/templates.ts';
+import { categoryAppendOrders } from './checklist.ts';
 import { expenseDay, initialExpenseCurrency } from './expense.ts';
 
 // ponytail: @types/node 를 끌어오지 않기 위한 최소 어서션. 프레임워크 없음.
@@ -24,6 +25,11 @@ const same = (got: unknown, want: unknown, msg = '') =>
   JSON.stringify(got) === JSON.stringify(want) ||
   fail(`${msg} — got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`);
 const ok = (cond: boolean, msg: string) => cond || fail(msg);
+
+same(categoryAppendOrders(2, []), [1000, 2000], '빈 카테고리로 이름 변경');
+same(categoryAppendOrders(2, [3000, 1000]), [4000, 5000], '병합은 대상 마지막 뒤');
+same(categoryAppendOrders(0, [1000]), [], '빈 원본 병합');
+same(categoryAppendOrders(2, [1500]), [2500, 3500], '기존 간격 보존');
 
 // ── 거리 ──
 const busanStation = { lat: 35.1151, lng: 129.0403 };

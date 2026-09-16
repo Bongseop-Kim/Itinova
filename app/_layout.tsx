@@ -5,6 +5,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import { db } from '../db';
 import migrations from '../drizzle/migrations';
 import { colors, fontAssets, rounded, sizing, spacing, type as t } from '../theme';
@@ -53,19 +55,21 @@ export default function RootLayout() {
 
   // ponytail: 골격 화면은 네이티브 헤더를 계속 쓴다. 구현이 끝난 화면만 headerShown: false 로 내린다.
   return (
-    <Stack screenOptions={{ contentStyle: { backgroundColor: colors.canvas } }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="settings" options={{ headerShown: false }} />
-      <Stack.Screen name="ai/ask" options={{ headerShown: false }} />
-      <Stack.Screen name="ai/result" options={{ headerShown: false }} />
-      {/* S03 은 바텀시트라 뒤가 비쳐야 한다 — 카드 모달이 아니라 transparentModal */}
-      <Stack.Screen
-        name="create"
-        options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
-      />
-      <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
-    </Stack>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack screenOptions={{ contentStyle: { backgroundColor: colors.canvas } }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
+        <Stack.Screen name="ai/ask" options={{ headerShown: false }} />
+        <Stack.Screen name="ai/result" options={{ headerShown: false }} />
+        {/* S03 은 바텀시트라 뒤가 비쳐야 한다 — 카드 모달이 아니라 transparentModal */}
+        <Stack.Screen
+          name="create"
+          options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
+        />
+        <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
+      </Stack>
+    </GestureHandlerRootView>
   );
 }
 

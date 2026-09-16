@@ -1,7 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { GestureDetector, useTapGesture } from 'react-native-gesture-handler';
+import Animated, { useAnimatedProps, useAnimatedRef, useSharedValue, type SharedValue } from 'react-native-reanimated';
+import Sortable from 'react-native-sortables';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PlaceMap from '../../../components/PlaceMap';
@@ -15,7 +18,36 @@ import { groupByDay, type DaySection } from '../../../lib/itinerary';
 import { moveItem, sortByDistance } from '../../../lib/reorder';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { useTripId } from '../../../lib/useTripId';
-import { colors, mapStyle, rounded, sizing, spacing, type as t } from '../../../theme';
+import { colors, mapStyle, motion, rounded, sizing, spacing, type as t } from '../../../theme';
+
+function DragHandle({ name, scrollEnabled }: { name: string; scrollEnabled: SharedValue<boolean> }) {
+  // 부모 ScrollView가 핸들 드래그를 먼저 취소하지 않도록 UI 스레드에서 스크롤을 잠근다.
+  const touch = useTapGesture({
+    maxDistance: sizing.touchMin,
+    onTouchesDown: () => {
+      scrollEnabled.value = false;
+    },
+    onFinalize: () => {
+      scrollEnabled.value = true;
+    },
+  });
+  return (
+    <GestureDetector gesture={touch}>
+      <View collapsable={false}>
+        <Sortable.Handle style={s.handle}>
+          <Text
+            style={s.handleIcon}
+            accessible
+            accessibilityLabel={`${name} 순서 변경 핸들`}
+            accessibilityHint="위로/아래로 버튼으로 순서를 바꿀 수 있어요"
+          >
+            ≡
+          </Text>
+        </Sortable.Handle>
+      </View>
+    </GestureDetector>
+  );
+}
 
 export default function EditItinerary() {
   const id = useTripId();
@@ -23,6 +55,27 @@ export default function EditItinerary() {
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<string[]>([]);
   const [movingTo, setMovingTo] = useState(false);
+  const scrollRef = useAnimatedRef<ScrollView>();
+  const scrollEnabled = useSharedValue(true);
+  const scrollProps = useAnimatedProps(() => ({ scrollEnabled: scrollEnabled.value }));
+  const [screenReader, setScreenReader] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    let active = true;
+    AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
+      if (active) setScreenReader(enabled);
+    });
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (active) setReduceMotion(enabled);
+    });
+    const readerSubscription = AccessibilityInfo.addEventListener('screenReaderChanged', setScreenReader);
+    const motionSubscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      active = false;
+      readerSubscription.remove();
+      motionSubscription.remove();
+    };
+  }, []);
 
   const trip = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id])?.[0];
   const rows = useDbQuery(
@@ -64,87 +117,115 @@ export default function EditItinerary() {
   const move = (section: DaySection, from: number, to: number) =>
     reorderDay(moveItem(section.data, from, to).map((i) => i.id));
 
-  const sortDay = (section: DaySection) =>
-    reorderDay(sortByDistance(section.data).map((i) => i.id));
+  const sortDay = (section: DaySection) => reorderDay(sortByDistance(section.data).map((i) => i.id));
 
   return (
     <View style={s.screen}>
       <ScreenHeader title="일정 편집" action="완료" onAction={() => router.back()} />
 
       <View style={s.map}>
-        <PlaceMap {...mapData(sections)} center={trip?.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null} selectedIds={selected} onPinPress={toggleSelect} />
+        <PlaceMap
+          {...mapData(sections)}
+          center={trip?.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null}
+          selectedIds={selected}
+          onPinPress={toggleSelect}
+        />
       </View>
 
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={s.list}
-        stickySectionHeadersEnabled={false}
-        renderSectionHeader={({ section }) => (
-          <View style={s.dayHeader}>
-            <Text style={s.dayLabel}>day {section.dayIndex}</Text>
-            <Text style={s.dayMeta}>{dayMeta(section.date)}</Text>
-            <View style={s.dayActions}>
-              {section.data.length > 2 ? (
-                <Pressable onPress={() => sortDay(section)} hitSlop={8} accessibilityRole="button">
-                  <Text style={s.dayAction}>거리순 재정렬</Text>
-                </Pressable>
-              ) : null}
-              {section.data.length ? (
-                <Pressable onPress={() => selectDay(section)} hitSlop={8} accessibilityRole="button">
-                  <Text style={s.dayAction}>day 전체 선택</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        )}
-        renderItem={({ item, index, section }) => {
-          const on = selected.includes(item.id);
-          return (
-            <View style={s.row}>
-              <Pressable
-                onPress={() => toggleSelect(item.id)}
-                hitSlop={10}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: on }}
-                style={[s.checkbox, on && s.checkboxOn]}
-              />
-              <Text style={s.order}>{index + 1}</Text>
-              <View style={s.rowBody}>
-                <Text style={[s.name, item.visited && s.nameVisited]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Pressable
-                  onPress={() => toggleVisited(item.id, !item.visited)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                >
-                  <Text style={s.visited}>{item.visited ? '방문 완료' : '방문 전'}</Text>
-                </Pressable>
+      <Animated.ScrollView
+        ref={scrollRef}
+        animatedProps={scrollProps}
+        contentContainerStyle={[s.list, { paddingBottom: spacing.xxl + insets.bottom }]}
+      >
+        {sections.map((section) => (
+          <View key={section.dayId}>
+            <View style={s.dayHeader}>
+              <Text style={s.dayLabel}>day {section.dayIndex}</Text>
+              <Text style={s.dayMeta}>{dayMeta(section.date)}</Text>
+              <View style={s.dayActions}>
+                {section.data.length > 2 ? (
+                  <Pressable onPress={() => sortDay(section)} hitSlop={8} accessibilityRole="button">
+                    <Text style={s.dayAction}>거리순 재정렬</Text>
+                  </Pressable>
+                ) : null}
+                {section.data.length ? (
+                  <Pressable onPress={() => selectDay(section)} hitSlop={8} accessibilityRole="button">
+                    <Text style={s.dayAction}>day 전체 선택</Text>
+                  </Pressable>
+                ) : null}
               </View>
-              {/* ponytail: 드래그 대신 위/아래 버튼. 드래그는 제스처 라이브러리가 필요하다 */}
-              <Pressable
-                onPress={() => move(section as DaySection, index, index - 1)}
-                disabled={index === 0}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="위로"
-              >
-                <Text style={[s.arrow, index === 0 && s.arrowOff]}>위로</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => move(section as DaySection, index, index + 1)}
-                disabled={index === section.data.length - 1}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="아래로"
-              >
-                <Text style={[s.arrow, index === section.data.length - 1 && s.arrowOff]}>아래로</Text>
-              </Pressable>
             </View>
-          );
-        }}
-      />
+            <Sortable.Grid
+              columns={1}
+              data={section.data}
+              customHandle
+              dragActivationDelay={0}
+              dragActivationFailOffset={sizing.touchMin}
+              scrollableRef={scrollRef}
+              sortEnabled={!screenReader}
+              itemEntering={null}
+              itemExiting={null}
+              activeItemScale={1}
+              activeItemShadowOpacity={0}
+              activationAnimationDuration={reduceMotion ? 0 : motion.duration.fast}
+              dropAnimationDuration={reduceMotion ? 0 : motion.duration.normal}
+              onDragEnd={({ data, fromIndex, toIndex }) => {
+                if (fromIndex !== toIndex) reorderDay(data.map((item) => item.id));
+              }}
+              renderItem={({ item, index }) => {
+                const on = selected.includes(item.id);
+                return (
+                  <View style={s.row}>
+                    <DragHandle name={item.name} scrollEnabled={scrollEnabled} />
+                    <Pressable
+                      onPress={() => toggleSelect(item.id)}
+                      hitSlop={10}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: on }}
+                      style={[s.checkbox, on && s.checkboxOn]}
+                    />
+                    <Text style={s.order}>{index + 1}</Text>
+                    <View style={s.rowBody}>
+                      <Text style={[s.name, item.visited && s.nameVisited]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Pressable
+                        onPress={() => toggleVisited(item.id, !item.visited)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                      >
+                        <Text style={s.visited}>{item.visited ? '방문 완료' : '방문 전'}</Text>
+                      </Pressable>
+                    </View>
+                    {screenReader ? (
+                      <>
+                        <Pressable
+                          onPress={() => move(section as DaySection, index, index - 1)}
+                          disabled={index === 0}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="위로"
+                        >
+                          <Text style={[s.arrow, index === 0 && s.arrowOff]}>위로</Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => move(section as DaySection, index, index + 1)}
+                          disabled={index === section.data.length - 1}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="아래로"
+                        >
+                          <Text style={[s.arrow, index === section.data.length - 1 && s.arrowOff]}>아래로</Text>
+                        </Pressable>
+                      </>
+                    ) : null}
+                  </View>
+                );
+              }}
+            />
+          </View>
+        ))}
+      </Animated.ScrollView>
 
       {selected.length ? (
         <View style={[s.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
@@ -205,11 +286,24 @@ const s = StyleSheet.create({
   },
 
   list: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
-  dayHeader: { paddingTop: spacing.lg, paddingBottom: spacing.xs, gap: spacing.xxs },
+  dayHeader: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xs,
+    gap: spacing.xxs,
+  },
   dayLabel: { ...t.titleMd, color: colors.ink },
   dayMeta: { ...t.caption, color: colors.muted },
-  dayActions: { flexDirection: 'row', gap: spacing.md, paddingTop: spacing.xxs },
-  dayAction: { ...t.caption, color: colors.ink, minHeight: sizing.touchMin, lineHeight: sizing.touchMin },
+  dayActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingTop: spacing.xxs,
+  },
+  dayAction: {
+    ...t.caption,
+    color: colors.ink,
+    minHeight: sizing.touchMin,
+    lineHeight: sizing.touchMin,
+  },
 
   row: {
     flexDirection: 'row',
@@ -219,6 +313,17 @@ const s = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderBottomWidth: sizing.hairline,
     borderBottomColor: colors.hairlineSoft,
+  },
+  handle: {
+    width: sizing.touchMin,
+    minHeight: sizing.touchMin,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  handleIcon: {
+    fontFamily: t.titleMd.fontFamily,
+    fontSize: sizing.iconLg,
+    color: colors.muted,
   },
   checkbox: {
     width: 24,

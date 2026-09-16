@@ -16,7 +16,6 @@
 
 | # | 파일 | 범위 | 선행 | 외부 의존 |
 | --- | --- | --- | --- | --- |
-| 03 | `03-itinerary-drag-and-checklist-categories.md` | S14 드래그(`react-native-sortables`), S16 카테고리 메뉴 | 01 | npm 1개 |
 | 04 | `04-backup-scope.md` | 백업 v2(채팅 포함), 부분 실패 안내 | 01 | 없음 |
 | 05 | `05-subscription-server.md` | Cloud Run `itinova-api`, Apple 검증·알림, Firestore, 세션, `verify` rate limit. (D절 Google Play는 Android 출시 후) | — | GCP·App Store Connect |
 | 06 | `06-subscription-client.md` | `expo-iap`, S23, 구매 복원, AI 게이트 | 05 A·B | 개발 빌드, Sandbox 계정 |
@@ -48,7 +47,7 @@
 - [x] 01의 P0 4건이 재현되지 않는다.
 - [ ] `grep -rn "components/Screen" app/`가 0건이다(08·09 이후).
 - [ ] S02에 동작하지 않는 행·안내가 없고, 백업 문구와 JSON 범위가 일치한다(02·04).
-- [ ] S14 드래그, S16 카테고리 메뉴가 동작한다(03).
+- [x] S14 드래그, S16 카테고리 메뉴가 동작한다(03).
 - [ ] 서버가 스토어 검증 + 세션 + 권한 + 한도를 모두 확인한 뒤에만 모델을 호출하고, 앱 번들과 로그에 키가 없다(05·07).
 - [ ] Sandbox 실기기에서 구독·복원·취소·환불 흐름이 기대대로 열리고 막힌다(06).
 - [ ] S07→S08→저장→S10, S19 장소 카드→BS3가 동작한다(08·09).
