@@ -63,9 +63,9 @@
 
 ### 6. 썸네일·상세 콘텐츠 정리
 
-1. `app/trip/[id]/(tabs)/itinerary.tsx:159`, `app/trip/[id]/(tabs)/saved.tsx:84`의 빈 회색 박스를 제거하고 카테고리 아이콘 또는
-   `lib/category.ts:2-14` 라벨 배지로 대체한다. `photoUrl`이 있을 때만(백업으로 들어온 과거 Google 캐시) 이미지를 그린다 — S09
-   `(tabs)/index.tsx:49`가 이미 이 규칙을 따른다. 근거: 절대 채워지지 않는 자리는 미완성으로 읽힌다.
+1. `app/trip/[id]/(tabs)/itinerary.tsx:159`, `app/trip/[id]/(tabs)/saved.tsx:84`의 빈 회색 박스는 `11-clay-assets-and-visual-refresh.md` § 5-6이
+   카테고리 클레이 44dp로 채운다(2026-09-16 조정). 이 항목은 `photoUrl`이 있을 때만(백업으로 들어온 과거 Google 캐시) 이미지를 우선 그리는 규칙만 남긴다 — S09
+   `(tabs)/index.tsx:49`가 이미 이 규칙을 따른다. 플랜 11이 먼저 실행되지 않았다면 임시로 `lib/category.ts:2-14` 라벨 배지를 쓴다.
 2. `app/place/[placeId].tsx:33` 평점 행은 값이 있을 때만 그리는 현재 동작을 유지하되, 정보 출처 문구(`:36`)를 "Apple 지도 제공: 이름·주소·좌표·분류"
    처럼 실제 필드로 구체화한다. 전화번호는 컬럼이 없으니 추가하지 않는다.
 3. `docs/design.md` §2.6 S20 행의 "사진, 평점·리뷰 수, 전화"를 "공급자가 제공하는 경우에만"으로 한정하고, §2.4 S10 "장소 썸네일"을
