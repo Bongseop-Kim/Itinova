@@ -8,7 +8,7 @@ export default function Chat() {
   const router = useRouter();
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <ScreenHeader title="AI 채팅" action="뒤로" onAction={() => router.back()} />
+      <ScreenHeader title="AI 채팅" />
       <Text style={{ ...t.bodyMd, color: colors.muted, padding: spacing.gutter }}>
         AI 채팅은 준비 중이에요.
       </Text>

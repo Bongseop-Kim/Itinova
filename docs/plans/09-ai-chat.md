@@ -16,6 +16,8 @@
 - S09 추천 캐러셀(플랜 10-7)은 이 플랜의 장소 카드 컴포넌트를 재사용한다.
 
 ## 실행 조건
+- 헤더·입력·칩·시트·탭은 `components/ui/`의 공용 컴포넌트를 쓴다(2026-09-16 플랜 12로 도입). 새로 만들지 않는다. 채팅 화면 배치는 `docs/references/designbase-app-ui/screens/ai-chat.png`·`ai-chat-active.png`를 참고한다.
+
 
 - 플랜 07 `chat` 200, 플랜 08 `lib/aiResolve.ts` 존재. iOS 개발 빌드.
 

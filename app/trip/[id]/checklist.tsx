@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Alert, Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Alert, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { ScreenHeader } from '../../../components/ui';
+import { Checkbox, IconButton, ScreenHeader, SectionHeader } from '../../../components/ui';
 import {
   addChecklistItem,
   checklistQuery,
@@ -17,7 +17,7 @@ import { CHECKLIST_TEMPLATE, checklistSections } from '../../../db/templates';
 import { moveItem } from '../../../lib/reorder';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { useTripId } from '../../../lib/useTripId';
-import { colors, rounded, sizing, spacing, type as t } from '../../../theme';
+import { colors, sizing, spacing, type as t } from '../../../theme';
 
 export default function Checklist() {
   const id = useTripId();
@@ -67,7 +67,7 @@ export default function Checklist() {
 
   return (
     <View style={s.screen}>
-      <ScreenHeader title="체크리스트" action="카테고리 추가" onAction={addCategory} />
+      <ScreenHeader title="체크리스트" actions={[{ icon: 'plus', label: '카테고리 추가', onPress: addCategory }]} />
       <Text style={s.progress}>
         {total ? `${done} / ${total} 완료` : '항목이 없어요'}
       </Text>
@@ -79,23 +79,21 @@ export default function Checklist() {
         contentContainerStyle={s.list}
         stickySectionHeadersEnabled={false}
         renderSectionHeader={({ section }) => (
-          <Pressable style={s.categoryHeader} accessibilityRole="button" accessibilityLabel={`${section.title} 카테고리 더보기`}
-            onPress={() => categoryMenu(section.title, section.data.length)}
-            onLongPress={() => categoryMenu(section.title, section.data.length)}>
-            <Text style={s.category}>{section.title}</Text><Text style={s.more}>⋯</Text>
-          </Pressable>
+          <SectionHeader
+            title={section.title}
+            actionIcon="more"
+            action={`${section.title} 카테고리 더보기`}
+            onAction={() => categoryMenu(section.title, section.data.length)}
+          />
         )}
         renderItem={({ item, index, section }) => (
           <View style={s.row}>
-            <Pressable
-              onPress={() => toggleChecklistItem(item.id, !item.done)}
-              hitSlop={10}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: item.done }}
-              style={[s.checkbox, item.done && s.checkboxOn]}
-            />
+            <Checkbox checked={item.done} label={item.label} onPress={() => toggleChecklistItem(item.id, !item.done)} />
             <Text style={[s.label, item.done && s.labelDone]}>{item.label}</Text>
-            <Pressable
+            <IconButton
+              icon="more"
+              color={colors.muted}
+              label={`${item.label} 더보기`}
               onPress={() => Alert.alert(item.label, undefined, [
                 { text: '이름 변경', onPress: () => Alert.prompt('항목 이름 변경', undefined,
                   (value) => renameChecklistItem(item.id, value), 'plain-text', item.label) },
@@ -106,13 +104,7 @@ export default function Checklist() {
                 { text: '삭제', style: 'destructive', onPress: () => removeChecklistItem(item.id) },
                 { text: '취소', style: 'cancel' },
               ])}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={`${item.label} 더보기`}
-              style={s.moreButton}
-            >
-              <Text style={s.more}>⋯</Text>
-            </Pressable>
+            />
           </View>
         )}
         renderSectionFooter={({ section }) => (
@@ -151,35 +143,18 @@ function AddRow({ onSubmit }: { onSubmit: (label: string) => void }) {
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
   progress: { ...t.caption, color: colors.muted, paddingHorizontal: spacing.gutter },
-  list: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
-
-  categoryHeader: { flexDirection: 'row', alignItems: 'center', paddingTop: spacing.lg, paddingBottom: spacing.xs, minHeight: sizing.touchMin },
-  category: { ...t.titleMd, color: colors.ink, flex: 1 },
-  moreButton: { width: sizing.touchMin, minHeight: sizing.touchMin, alignItems: 'center', justifyContent: 'center' },
-  more: { fontFamily: t.titleMd.fontFamily, fontSize: sizing.iconLg, color: colors.ink },
+  list: { paddingBottom: spacing.xxl },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     minHeight: sizing.touchMin,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xxs,
+    paddingLeft: spacing.gutter,
+    paddingRight: spacing.xs,
   },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: rounded.xs,
-    borderWidth: 1.5,
-    borderColor: colors.hairline,
-  },
-  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   label: { ...t.bodyMd, color: colors.ink, flexGrow: 1, flexShrink: 1 },
   labelDone: { color: colors.mutedSoft, textDecorationLine: 'line-through' },
-
-  addRow: { paddingTop: spacing.xs },
-  addInput: {
-    ...t.bodyMd,
-    color: colors.ink,
-    minHeight: sizing.touchMin,
-    paddingHorizontal: spacing.xs,
-  },
+  addRow: { paddingTop: spacing.xxs, paddingHorizontal: spacing.gutter },
+  addInput: { ...t.bodyMd, color: colors.ink, minHeight: sizing.touchMin, paddingLeft: 24 + spacing.sm },
 });

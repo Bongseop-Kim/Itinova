@@ -1,23 +1,23 @@
 import { desc } from 'drizzle-orm';
 import { Redirect, useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMemo, useState } from 'react';
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
-import { BottomCtaBar } from '../components/ui';
+import { Badge, BottomCtaBar, ScreenHeader, SectionHeader, Tabs } from '../components/ui';
 import { db } from '../db';
 import { appSettings, trips } from '../db/schema';
 import { DATE_FORMAT, ONBOARDED, settingsQuery } from '../db/settings';
-import { todayISO } from '../lib/calendar';
-import { dateRangeLabel, ddayLabel, tripBucket, type Bucket, type DateFormat } from '../lib/date';
+import { todayISO, tripLength } from '../lib/calendar';
+import { dateRangeLabel, dayMeta, ddayLabel, tripBucket, type Bucket, type DateFormat } from '../lib/date';
 import { useDbQuery } from '../lib/useDbQuery';
 import { colors, elevation, rounded, spacing, type as t } from '../theme';
 
 type Trip = { id: string; title: string; startDate: string; endDate: string; cityName: string };
+const TABS = ['다가오는', '지난'] as const;
 
 export default function Home() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState<(typeof TABS)[number]>('다가오는');
 
   const settings = useDbQuery(() => settingsQuery(), [appSettings], []);
 
@@ -51,24 +51,30 @@ export default function Home() {
     return out;
   }, [rows, today]);
 
+  // 템플릿 "나의 여행": 연도 그룹 헤더 + 날짜 라벨 + 카드
+  const sections = useMemo(() => {
+    const list = tab === '다가오는' ? buckets.upcoming : buckets.past;
+    const byYear = new Map<string, Trip[]>();
+    for (const trip of list) {
+      const year = trip.startDate.slice(0, 4);
+      byYear.set(year, [...(byYear.get(year) ?? []), trip]);
+    }
+    return [...byYear].map(([year, data]) => ({ title: `${year}년`, data }));
+  }, [buckets, tab]);
+
   const empty = !rows?.length;
 
   if (!settings) return <View style={s.screen} />;
   if (!onboarded) return <Redirect href="/onboarding" />;
 
   return (
-    <View style={[s.screen, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Text style={s.brand}>Itinova</Text>
-        <Pressable
-          onPress={() => router.push('/settings')}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="앱 설정"
-        >
-          <Text style={s.headerAction}>설정</Text>
-        </Pressable>
-      </View>
+    <View style={s.screen}>
+      <ScreenHeader
+        title="Itinova"
+        largeTitle
+        back={false}
+        actions={[{ icon: 'settings', label: '앱 설정', onPress: () => router.push('/settings') }]}
+      />
 
       {empty ? (
         // E01 — 일러스트 자리를 확보해 둔다 (design-system §자산 로드맵 2번)
@@ -80,57 +86,64 @@ export default function Home() {
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={s.content}>
-          {buckets.ongoing.map((trip) => (
-            <ActiveTripCard
-              key={trip.id}
-              trip={trip}
-              today={today}
-              onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
-              dateFormat={dateFormat}
-            />
-          ))}
-
-          <Section title="다가오는 여행" trips={buckets.upcoming} today={today} router={router} dateFormat={dateFormat} />
-          <Section title="지난 여행" trips={buckets.past} today={today} router={router} dateFormat={dateFormat} />
-        </ScrollView>
+        <SectionList
+          sections={sections}
+          keyExtractor={(trip) => trip.id}
+          contentContainerStyle={s.content}
+          stickySectionHeadersEnabled={false}
+          ListHeaderComponent={
+            <View style={s.listHeader}>
+              {buckets.ongoing.map((trip) => (
+                <ActiveTripCard
+                  key={trip.id}
+                  trip={trip}
+                  today={today}
+                  onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
+                  dateFormat={dateFormat}
+                />
+              ))}
+              <Tabs
+                options={[
+                  { value: TABS[0], count: buckets.upcoming.length },
+                  { value: TABS[1], count: buckets.past.length },
+                ]}
+                value={tab}
+                onChange={setTab}
+              />
+            </View>
+          }
+          renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
+          renderItem={({ item: trip }) => (
+            <View style={s.cardWrap}>
+              {/* 연도는 섹션 헤더가 이미 말한다 — 행 라벨은 월/일만 */}
+              <Text style={s.dateLabel}>{dayMeta(trip.startDate, 'md')}</Text>
+              <Pressable
+                onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
+                accessibilityRole="button"
+                style={({ pressed }) => [s.card, pressed && s.cardPressed]}
+              >
+                <View style={s.cardTop}>
+                  <Badge label={tab === '다가오는' ? ddayLabel(trip.startDate, today) : '지난 여행'} />
+                  <Text style={s.cardCity} numberOfLines={1}>
+                    {trip.cityName}
+                  </Text>
+                </View>
+                <Text style={s.cardTitle} numberOfLines={1}>
+                  {trip.title}
+                </Text>
+                <Text style={s.cardMeta}>
+                  {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} · {tripLength(trip.startDate, trip.endDate)}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+          ListEmptyComponent={
+            <Text style={s.tabEmpty}>{tab === '다가오는' ? '다가오는 여행이 없어요.' : '지난 여행이 없어요.'}</Text>
+          }
+        />
       )}
 
       <BottomCtaBar label="여행 일정짜기" onPress={() => router.push('/create')} />
-    </View>
-  );
-}
-
-function Section({
-  title,
-  trips: list,
-  today,
-  router,
-  dateFormat,
-}: {
-  title: string;
-  trips: Trip[];
-  today: string;
-  router: ReturnType<typeof useRouter>;
-  dateFormat: DateFormat;
-}) {
-  if (!list.length) return null;
-  return (
-    <View style={s.section}>
-      <Text style={s.sectionLabel}>{title}</Text>
-      {list.map((trip) => (
-        <Pressable
-          key={trip.id}
-          onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
-          accessibilityRole="button"
-          style={s.card}
-        >
-          <Text style={s.cardTitle}>{trip.title}</Text>
-          <Text style={s.cardMeta}>
-            {ddayLabel(trip.startDate, today)} · {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)}
-          </Text>
-        </Pressable>
-      ))}
     </View>
   );
 }
@@ -149,10 +162,10 @@ function ActiveTripCard({
 }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={s.activeCard}>
-      <Text style={s.activeDday}>{ddayLabel(trip.startDate, today)}</Text>
+      <Badge label="여행 중" tone="accent" />
       <Text style={s.activeTitle}>{trip.title}</Text>
       <Text style={s.activeMeta}>
-        {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)}
+        {trip.cityName} · {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} · {ddayLabel(trip.startDate, today)}
       </Text>
     </Pressable>
   );
@@ -160,39 +173,36 @@ function ActiveTripCard({
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.gutter,
-    minHeight: 56,
-  },
-  brand: { ...t.titleLg, color: colors.ink, flexGrow: 1 },
-  headerAction: { ...t.button, color: colors.muted, minHeight: 44, lineHeight: 44 },
 
-  content: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xl, gap: spacing.sm },
+  content: { paddingBottom: spacing.xl },
+  listHeader: { gap: spacing.sm },
 
   activeCard: {
     backgroundColor: colors.brandTeal,
     borderRadius: rounded.xl,
     padding: spacing.lg,
     gap: spacing.xxs,
-    marginTop: spacing.xs,
+    marginHorizontal: spacing.gutter,
+    alignItems: 'flex-start',
   },
-  activeDday: { ...t.caption, color: colors.onDarkSoft },
-  activeTitle: { ...t.displaySm, color: colors.onDark },
+  activeTitle: { ...t.displaySm, color: colors.onDark, paddingTop: spacing.xxs },
   activeMeta: { ...t.caption, color: colors.onDarkSoft },
 
-  section: { paddingTop: spacing.lg, gap: spacing.xs },
-  sectionLabel: { ...t.captionUpper, color: colors.muted },
+  cardWrap: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.sm, gap: spacing.xxs },
+  dateLabel: { ...t.caption, color: colors.muted },
   card: {
     backgroundColor: colors.surfaceCard,
     borderRadius: rounded.lg,
     padding: spacing.md,
-    gap: 2,
+    gap: spacing.xxs,
     boxShadow: elevation.card,
   },
+  cardPressed: { backgroundColor: colors.surfaceStrong },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  cardCity: { ...t.caption, color: colors.muted, flexShrink: 1 },
   cardTitle: { ...t.titleLg, color: colors.ink },
   cardMeta: { ...t.caption, color: colors.muted },
+  tabEmpty: { ...t.bodySm, color: colors.muted, paddingHorizontal: spacing.gutter, paddingTop: spacing.lg },
 
   empty: {
     flex: 1,
@@ -208,6 +218,6 @@ const s = StyleSheet.create({
     backgroundColor: colors.surfaceCard,
     marginBottom: spacing.xs,
   },
-  emptyTitle: { ...t.titleMd, color: colors.ink },
+  emptyTitle: { ...t.displayLg, color: colors.ink, textAlign: 'center' },
   emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center' },
 });

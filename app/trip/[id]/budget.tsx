@@ -2,17 +2,11 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
-import { BottomCtaBar, ScreenHeader, SegmentTabs } from '../../../components/ui';
+import { BottomCtaBar, ScreenHeader, SectionHeader, SegmentedControl } from '../../../components/ui';
 import { expensesQuery, removeExpense } from '../../../db/expenses';
 import { appSettings, expenses as expensesTable, tripDays } from '../../../db/schema';
 import { DATE_FORMAT, settingsQuery } from '../../../db/settings';
-import {
-  formatAmount,
-  groupByCategory,
-  groupByDay,
-  sumByCurrency,
-  type Expense,
-} from '../../../lib/expense';
+import { formatAmount, groupByCategory, groupByDay, sumByCurrency, type Expense } from '../../../lib/expense';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { dayMeta } from '../../../lib/date';
 import { useTripId } from '../../../lib/useTripId';
@@ -58,7 +52,7 @@ export default function Budget() {
         <Text style={s.totalsLabel}>통화별 합계</Text>
       </View>
 
-      <SegmentTabs options={MODES} value={mode} onChange={setMode} />
+      <SegmentedControl options={MODES} value={mode} onChange={setMode} />
 
       <SectionList
         sections={sections}
@@ -76,14 +70,10 @@ export default function Budget() {
           </View>
         }
         renderSectionHeader={({ section }) => (
-          <View style={s.groupHeader}>
-            <Text style={s.groupLabel}>{section.title}</Text>
-            <Text style={s.groupSum}>
-              {section.subtotal
-                .map((x) => `${formatAmount(x.amount, x.currency)} ${x.currency}`)
-                .join('  ')}
-            </Text>
-          </View>
+          <SectionHeader
+            title={section.title}
+            meta={section.subtotal.map((x) => `${formatAmount(x.amount, x.currency)} ${x.currency}`).join('  ')}
+          />
         )}
         renderItem={({ item }) => (
           <Pressable
@@ -116,31 +106,21 @@ const s = StyleSheet.create({
   total: { ...t.displayMd, color: colors.ink, fontVariant: ['tabular-nums'] },
   totalsLabel: { ...t.caption, color: colors.muted },
 
-  list: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.lg },
-  groupHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xs,
-  },
-  groupLabel: { ...t.titleMd, color: colors.ink, flexGrow: 1 },
-  groupSum: { ...t.caption, color: colors.muted, fontVariant: ['tabular-nums'] },
-
+  list: { paddingBottom: spacing.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     minHeight: sizing.touchMin,
     paddingVertical: spacing.xs,
-    borderBottomWidth: sizing.hairline,
-    borderBottomColor: colors.hairlineSoft,
+    paddingHorizontal: spacing.gutter,
   },
   rowBody: { flexGrow: 1, flexShrink: 1 },
   rowTitle: { ...t.titleSm, color: colors.ink },
   rowMeta: { ...t.caption, color: colors.muted },
   amount: { ...t.numeric, color: colors.ink },
 
-  empty: { alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xxl },
+  empty: { alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xxl, paddingHorizontal: spacing.gutter },
   emptyFigure: {
     width: 160,
     height: 160,

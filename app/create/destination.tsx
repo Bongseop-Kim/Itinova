@@ -1,76 +1,67 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { ScreenHeader, SegmentTabs } from '../../components/ui';
 import AppleSearchBar from '../../components/AppleSearchBar';
-import { useAppleSearch } from '../../lib/useAppleSearch';
+import { Chip, ChipRow, ListRow, ScreenHeader, SectionHeader } from '../../components/ui';
 import { DOMESTIC, OVERSEAS, type City } from '../../lib/cities';
-import { colors, sizing, spacing, type as t } from '../../theme';
+import { useAppleSearch } from '../../lib/useAppleSearch';
+import { colors, spacing, type as t } from '../../theme';
 
-const TABS = ['국내', '해외'] as const;
-
+// S04. 템플릿 "여행지 찾기": 검색바 + 지역별 섹션 헤더 + 도시 pill 칩. 검색하면 결과 목록으로 바뀐다.
 export default function Destination() {
   const router = useRouter();
-  const [tab, setTab] = useState<(typeof TABS)[number]>('국내');
-  const cities = tab === '국내' ? DOMESTIC : OVERSEAS;
   const search = useAppleSearch(true);
-  const results = search.results.filter((p) => tab === '국내' ? p.countryCode === 'KR' : p.countryCode !== 'KR');
+  const go = (c: City) =>
+    router.push({
+      pathname: '/create/dates',
+      params: { name: c.name, region: c.region, countryCode: c.countryCode, currency: c.currency, lat: c.lat, lng: c.lng },
+    });
 
   return (
     <View style={s.screen}>
       <ScreenHeader title="어디로 떠나세요?" />
-      <SegmentTabs options={TABS} value={tab} onChange={setTab} />
       <AppleSearchBar search={search} placeholder="도시 이름 검색" />
 
-      <FlatList
-        data={search.searched ? results : cities}
-        keyboardShouldPersistTaps="handled"
-        keyExtractor={(c) => `${c.countryCode}|${c.region}|${c.name}`}
-        contentContainerStyle={s.list}
-        ListHeaderComponent={
-          <View style={s.listHeader}>
-            <Text style={s.sectionLabel}>{search.searched ? '검색 결과' : '인기 도시'}</Text>
-          </View>
-        }
-        ListEmptyComponent={!search.loading && !search.error ? <Text style={s.cityRegion}>검색 결과가 없어요. 다른 도시 이름이나 국내·해외 탭을 확인해 주세요.</Text> : null}
-        renderItem={({ item }) => (
-          <CityRow city={item} onPress={() => router.push({ pathname: '/create/dates', params: {
-            name: item.name, region: item.region, countryCode: item.countryCode,
-            currency: item.currency, lat: item.lat, lng: item.lng,
-          } })} />
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.list}>
+        {search.searched ? (
+          <>
+            <SectionHeader title="검색 결과" />
+            {search.results.map((c) => (
+              <ListRow key={`${c.countryCode}|${c.region}|${c.name}`} title={c.name} subtitle={c.region} leading="location" trailing="chevron" onPress={() => go(c)} />
+            ))}
+            {!search.loading && !search.error && !search.results.length ? (
+              <Text style={s.emptyBody}>검색 결과가 없어요. 다른 도시 이름으로 다시 검색해 주세요.</Text>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <CityChips title="국내 인기" cities={DOMESTIC} onPick={go} />
+            <CityChips title="해외 인기" cities={OVERSEAS} onPick={go} />
+          </>
         )}
-      />
+      </ScrollView>
     </View>
   );
 }
 
-function CityRow({ city, onPress }: { city: City; onPress: () => void }) {
+function CityChips({ title, cities, onPick }: { title: string; cities: City[]; onPick: (c: City) => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => [s.row, pressed && s.rowPressed]}
-    >
-      <Text style={s.cityName}>{city.name}</Text>
-      <Text style={s.cityRegion}>{city.region}</Text>
-    </Pressable>
+    <View>
+      <SectionHeader title={title} />
+      <View style={s.chips}>
+        <ChipRow>
+          {cities.map((c) => (
+            <Chip key={c.name} label={c.name} onPress={() => onPick(c)} />
+          ))}
+        </ChipRow>
+      </View>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  list: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
-  listHeader: { gap: spacing.sm, paddingTop: spacing.md, paddingBottom: spacing.xs },
-  sectionLabel: { ...t.captionUpper, color: colors.muted },
-  row: {
-    minHeight: sizing.touchMin,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: sizing.hairline,
-    borderBottomColor: colors.hairlineSoft,
-    justifyContent: 'center',
-  },
-  rowPressed: { backgroundColor: colors.surfaceCard },
-  cityName: { ...t.titleSm, color: colors.ink },
-  cityRegion: { ...t.bodySm, color: colors.muted },
+  list: { paddingBottom: spacing.xxl },
+  chips: { paddingHorizontal: spacing.gutter },
+  emptyBody: { ...t.bodySm, color: colors.muted, paddingHorizontal: spacing.gutter },
 });

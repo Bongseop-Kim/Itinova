@@ -80,10 +80,11 @@ tracking:
   tight: -0.4
 
 rounded:
-  xs: 6
+  # 템플릿(Designbase) 스케일 8/12/20/24 (플랜 12). sm 은 xs 별칭.
+  xs: 8
   sm: 8
   md: 12
-  lg: 16
+  lg: 20
   xl: 24
   sheet: 24        # 바텀시트 상단 두 모서리만
   pill: 9999
@@ -104,6 +105,7 @@ sizing:
   touch-min: 44          # iOS HIG / WCAG
   control-h: 48          # 버튼·입력 기본 높이 (폰은 44보다 48이 편함)
   control-h-sm: 36       # 칩, 소형 버튼
+  control-h-md: 40       # 아이콘 버튼·검색바
   tab-bar-h: 56          # + bottom safe-area inset
   header-h: 56           # + top safe-area inset
   icon-sm: 16
@@ -139,12 +141,20 @@ components:
     paddingHorizontal: "{spacing.gutter}"
     # 상하 인셋은 useSafeAreaInsets(). SafeAreaView 하드코딩 금지.
   screen-header:
+    # 왼쪽 뒤로 셰브론(기본) · 중앙 제목 · 오른쪽 아이콘 액션 1~2개 (템플릿 Navigation Bar)
     backgroundColor: "{colors.canvas}"
     height: "{sizing.header-h}"
     titleTypography: "{typography.title-lg}"
     titleColor: "{colors.ink}"
+    titleAlign: center
+    paddingHorizontal: "{spacing.xs}"
     elevation: "{elevation.flat}"          # 스크롤 전엔 그림자 없음
     elevationScrolled: "{elevation.card}"  # 스크롤 시작하면 card
+  screen-header-large:
+    # 위 줄은 아이콘만, 아래 줄에 큰 제목 (S01 홈, S02 앱 설정, S21 여행 설정)
+    titleTypography: "{typography.display-md}"
+    paddingHorizontal: "{spacing.gutter}"
+    paddingBottom: "{spacing.sm}"
   tab-bar:
     backgroundColor: "{colors.canvas}"
     height: "{sizing.tab-bar-h}"
@@ -153,13 +163,20 @@ components:
     activeTintColor: "{colors.ink}"
     inactiveTintColor: "{colors.muted-soft}"
     labelTypography: "{typography.tab-label}"
+    iconSize: "{sizing.icon-lg}"      # 활성은 -filled, 비활성은 outline (템플릿 아이콘 짝)
   bottom-cta-bar:
     backgroundColor: "{colors.canvas}"
     paddingHorizontal: "{spacing.gutter}"
     paddingTop: "{spacing.sm}"
     borderTopWidth: "{sizing.hairline}"
     borderTopColor: "{colors.hairline}"
+    gap: "{spacing.sm}"
     # paddingBottom = spacing.sm + insets.bottom
+    variants:
+      # 왼쪽 tertiary + 오른쪽 primary, 폭 1:2 (S14 액션바)
+      two-button: { secondaryFlex: 1, primaryFlex: 2 }
+      # 왼쪽 정보 두 줄 + 오른쪽 버튼 (S05 날짜)
+      info: { titleTypography: "{typography.title-md}", subTypography: "{typography.caption}" }
 
   # ── 버튼 ──
   button-primary:
@@ -175,7 +192,18 @@ components:
     backgroundColor: "{colors.primary-disabled}"
     textColor: "{colors.muted}"
   button-secondary:
+    # 템플릿 3단 중 2단 — 연한 면 + 잉크 텍스트
+    backgroundColor: "{colors.surface-card}"
+    backgroundColorPressed: "{colors.surface-strong}"
+    textColor: "{colors.ink}"
+    typography: "{typography.button}"
+    borderRadius: "{rounded.md}"
+    height: "{sizing.control-h}"
+    paddingHorizontal: "{spacing.lg}"
+  button-tertiary:
+    # 기존 테두리형 (이름만 바뀜)
     backgroundColor: "{colors.canvas}"
+    backgroundColorPressed: "{colors.surface-soft}"
     textColor: "{colors.ink}"
     typography: "{typography.button}"
     borderRadius: "{rounded.md}"
@@ -197,8 +225,14 @@ components:
   icon-button:
     backgroundColor: transparent
     tintColor: "{colors.ink}"
-    size: "{sizing.touch-min}"
+    size: "{sizing.control-h-md}"     # 시각 40, 터치 44 (hitSlop)
+    iconSize: "{sizing.icon-lg}"
     borderRadius: "{rounded.full}"
+    pressedBackgroundColor: "{colors.surface-card}"
+  icon-button-floating:
+    # 지도 위 버튼 — 흰 원 + 그림자로 타일에서 분리한다
+    backgroundColor: "{colors.canvas}"
+    elevation: "{elevation.card}"
   fab:
     backgroundColor: "{colors.primary}"
     tintColor: "{colors.on-primary}"
@@ -208,14 +242,32 @@ components:
 
   # ── 리스트 / 카드 ──
   list-row:
+    # 행 구분선을 두지 않는다 — 그룹 사이 간격이 구분한다 (템플릿 설정 화면)
     backgroundColor: "{colors.canvas}"
-    minHeight: "{sizing.touch-min}"
-    paddingVertical: "{spacing.sm}"
+    minHeight: 56
+    paddingVertical: "{spacing.xs}"
+    paddingHorizontal: "{spacing.gutter}"
+    gap: "{spacing.sm}"
     titleTypography: "{typography.title-sm}"
     subtitleTypography: "{typography.body-sm}"
     subtitleColor: "{colors.muted}"
-    separatorWidth: "{sizing.hairline}"
-    separatorColor: "{colors.hairline-soft}"
+    leadingSize: "{sizing.icon-lg}"   # 아이콘 또는 44dp 썸네일
+    trailingIconSize: "{sizing.icon-md}"
+    trailingIconColor: "{colors.muted-soft}"
+    pressedBackgroundColor: "{colors.surface-soft}"
+  list-group:
+    paddingTop: "{spacing.md}"
+    titleTypography: "{typography.caption-upper}"
+    titleColor: "{colors.muted}"
+  section-header:
+    titleTypography: "{typography.title-md}"
+    titleColor: "{colors.ink}"
+    metaTypography: "{typography.caption}"
+    metaColor: "{colors.muted}"
+    actionTypography: "{typography.caption}"
+    actionColor: "{colors.muted}"
+    paddingTop: "{spacing.lg}"
+    paddingBottom: "{spacing.xs}"
   trip-card:
     # S01 홈 여행 카드. 이미지 위 잉크 텍스트, 크림 카드가 기본.
     backgroundColor: "{colors.surface-card}"
@@ -311,13 +363,28 @@ components:
     borderColor: "{colors.error}"
     messageTypography: "{typography.caption}"
     messageColor: "{colors.error}"
+  text-field:
+    # 라벨(위) + 입력 + 헬퍼/에러(아래). 값이 있고 포커스면 지우기 아이콘
+    labelTypography: "{typography.caption}"
+    labelColor: "{colors.muted}"
+    helperTypography: "{typography.caption}"
+    helperColor: "{colors.muted}"
+    gap: "{spacing.xxs}"
+    multilineMinHeight: 96
   search-bar:
+    # 선행 검색 아이콘 + 지우기 + 포커스 시 `취소` (템플릿 Search Bar). 별도 검색 버튼을 두지 않는다
     backgroundColor: "{colors.surface-card}"
     textColor: "{colors.ink}"
     typography: "{typography.body-md}"
     borderRadius: "{rounded.pill}"
-    height: "{sizing.control-h}"
-    paddingHorizontal: "{spacing.md}"
+    height: "{sizing.control-h-md}"
+    paddingHorizontal: "{spacing.sm}"
+    iconSize: "{sizing.icon-md}"
+    iconColor: "{colors.muted}"
+  search-bar-elevated:
+    # 지도 위
+    backgroundColor: "{colors.canvas}"
+    elevation: "{elevation.card}"
   amount-input:
     # S18 비용 입력
     typography: "{typography.display-md}"
@@ -327,28 +394,48 @@ components:
   # ── 선택 ──
   chip:
     backgroundColor: transparent
-    textColor: "{colors.muted}"
+    textColor: "{colors.ink}"
     typography: "{typography.caption}"
     borderRadius: "{rounded.pill}"
     borderWidth: "{sizing.hairline}"
     borderColor: "{colors.hairline}"
     height: "{sizing.control-h-sm}"
     paddingHorizontal: "{spacing.md}"
+    leadingIconSize: "{sizing.icon-sm}"   # 선택 · 카테고리 · 지도 필터
+    dismissIconSize: "{sizing.icon-sm}"   # onDismiss 가 있을 때만
+  chip-elevated:
+    # 지도 위 카테고리 칩
+    backgroundColor: "{colors.canvas}"
+    borderColor: transparent
+    elevation: "{elevation.card}"
   chip-selected:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
     borderColor: "{colors.primary}"
-  segment-tab:
-    # S11 전체/관광/맛집/숙소, S13 day 필터
-    backgroundColor: transparent
-    textColor: "{colors.muted}"
-    typography: "{typography.title-sm}"
-    borderRadius: "{rounded.pill}"
-    height: "{sizing.control-h-sm}"
-    paddingHorizontal: "{spacing.md}"
-  segment-tab-active:
+  segmented-control:
+    # 2~3개 균등폭. 필 컨테이너 + 채워진 선택 (템플릿 Segmented Controls). S17 모드, S13 지도뷰/리스트
     backgroundColor: "{colors.surface-card}"
+    borderRadius: "{rounded.pill}"
+    padding: 2
+    height: "{sizing.control-h-sm}"
+    labelTypography: "{typography.caption}"
+    labelColor: "{colors.muted}"
+  segmented-control-active:
+    backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
+    elevation: "0px 1px 3px rgba(10,10,10,0.08)"
+  tabs:
+    # 4개 이상·가로 스크롤·개수 배지. 밑줄 인디케이터 (템플릿 Tab). S01 다가오는/지난, S11 필터, S13 일차, S15 소스
+    backgroundColor: "{colors.canvas}"
+    borderBottomWidth: "{sizing.hairline}"
+    borderBottomColor: "{colors.hairline-soft}"
+    height: "{sizing.control-h}"
+    labelTypography: "{typography.title-sm}"
+    labelColor: "{colors.muted}"
+  tabs-active:
+    textColor: "{colors.ink}"
+    indicatorHeight: 2
+    indicatorColor: "{colors.ink}"
   checkbox:
     size: 24
     borderRadius: "{rounded.xs}"
@@ -356,14 +443,20 @@ components:
     borderColor: "{colors.hairline}"
     checkedBackgroundColor: "{colors.primary}"
     checkedTintColor: "{colors.on-primary}"
+    checkedIconSize: "{sizing.icon-sm}"   # check 아이콘
     hitSlop: 10
-  badge-pill:
+  badge:
+    # 개수(탭 라벨 옆)와 상태(D-3 · 여행 중 · 지난 여행)
     backgroundColor: "{colors.surface-card}"
     textColor: "{colors.ink}"
     typography: "{typography.caption}"
     borderRadius: "{rounded.pill}"
-    paddingVertical: "{spacing.xxs}"
-    paddingHorizontal: "{spacing.sm}"
+    minWidth: 20
+    minHeight: 20
+    paddingHorizontal: "{spacing.xs}"
+    variants:
+      accent: { backgroundColor: "{colors.brand-peach}", textColor: "{colors.ink}" }
+      dark:   { backgroundColor: "{colors.brand-teal}",  textColor: "{colors.on-dark}" }
   progress-bar:
     # S07 1/5~5/5
     height: 4
@@ -373,6 +466,7 @@ components:
 
   # ── 오버레이 ──
   bottom-sheet:
+    # BS1·BS2·BS3 가 같은 껍데기를 쓴다 (components/ui/BottomSheet). 라우트형 시트는 Modal 없이
     backgroundColor: "{colors.canvas}"
     borderTopLeftRadius: "{rounded.sheet}"
     borderTopRightRadius: "{rounded.sheet}"
@@ -398,17 +492,18 @@ components:
     borderRadius: "{rounded.lg}"
     collapsedHeight: 160
     expandedHeight: 320
+    pickerHeight: 240        # S15 장소 추가 — 지도 위에 검색바를 얹고도 아래 목록이 남는 높이
   map-pin:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
     typography: "{typography.caption}"
-    size: 28
+    size: 36              # 템플릿 NumberedPin (플랜 12)
     borderRadius: "{rounded.full}"
     borderWidth: 2
     borderColor: "{colors.canvas}"
   map-pin-selected:
     backgroundColor: "{colors.brand-pink}"
-    size: 34
+    size: 42
   map-route:
     strokeColor: "{colors.primary}"
     strokeWidth: 2
@@ -617,7 +712,7 @@ Clay 원본의 "디스플레이는 500 weight, 그 이상 금지" 규칙은 이�
 
 ## 라운드
 
-`{rounded.xs}` 6 배지 · `{rounded.sm}` 8 소형 · `{rounded.md}` 12 버튼·입력 · `{rounded.lg}` 16 카드 · `{rounded.xl}` 24 채도 카드 · `{rounded.sheet}` 24 바텀시트 상단 · `{rounded.pill}` 999 칩·검색바.
+`{rounded.xs}` 8 배지·체크박스 · `{rounded.sm}` 8 (xs 별칭) · `{rounded.md}` 12 버튼·입력 · `{rounded.lg}` 20 카드 · `{rounded.xl}` 24 채도 카드 · `{rounded.sheet}` 24 바텀시트 상단 · `{rounded.pill}` 999 칩·검색바.
 
 pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `borderRadius: size / 2`가 더 안전하다 — 크기가 바뀔 때 따라온다.
 
@@ -628,20 +723,30 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 ### 전역 크롬
 **`screen`** — 모든 화면의 루트. `{colors.canvas}` 배경 + `{spacing.gutter}` 좌우 여백. 지도 화면만 예외로 풀블리드.
 
-**`screen-header`** — 56dp + top inset. 스크롤 전엔 그림자 없이 크림에 녹아 있다가, 스크롤이 시작되면 `{elevation.card}`가 붙는다.
+**`screen-header`** — 56dp + top inset. 왼쪽 뒤로 셰브론(기본 동작은 `router.back`), 중앙 제목, 오른쪽 아이콘 액션 1~2개. 스크롤 전엔 그림자 없이 크림에 녹아 있다가, 스크롤이 시작되면 `{elevation.card}`가 붙는다.
+**헤더 액션은 글자가 아니라 아이콘이다.** `뒤로`·`닫기`·`홈` 같은 텍스트 버튼을 두지 않는다 — 스크린리더 라벨이 그 역할을 한다.
 
-**`tab-bar`** — 여행 내부에서만 나타난다 (여행홈·일정·저장·도구). 크림 배경 + 상단 hairline. 활성 잉크 / 비활성 `{colors.muted-soft}`.
+**`screen-header-large`** — 위 줄엔 아이콘만, 아래 줄에 `{typography.display-md}` 제목. S01 홈, S02 앱 설정, S21 여행 설정. 목록의 맨 위가 제목이 되는 화면에 쓴다.
 
-**`bottom-cta-bar`** — 화면 하단 고정 액션 (S01 `여행 일정짜기`, S05 `N박 M일`, S15 `day N 일정에 N개 담기`). 크림 배경 + 상단 hairline, `paddingBottom`에 bottom inset을 더한다.
+**`tab-bar`** — 여행 내부에서만 나타난다 (여행홈·일정·저장·도구). 크림 배경 + 상단 hairline. 아이콘 24dp + 라벨, 활성은 잉크 + `-filled` 아이콘 / 비활성은 `{colors.muted-soft}` + outline.
+
+**`bottom-cta-bar`** — 화면 하단 고정 액션 (S01 `여행 일정짜기`, S15 `day N 일정에 N개 담기`). 크림 배경 + 상단 hairline, `paddingBottom`에 bottom inset을 더한다.
+변형 둘: `two-button`은 왼쪽 tertiary + 오른쪽 primary를 1:2 폭으로 놓는다 (S14 `다른 일차로 이동` / `삭제`). `info`는 왼쪽에 정보 두 줄, 오른쪽에 버튼을 놓는다 (S05 `9.9 ~ 9.11` `2박 3일` / `다음`).
 
 ### 버튼
 **`button-primary`** — near-black 채움, 48dp 높이, `{rounded.md}`. 화면당 주 CTA 하나.
-**`button-secondary`** — 크림 + hairline 테두리.
+**`button-secondary`** — 크림 카드 면 + 잉크 텍스트.
+**`button-tertiary`** — 크림 + hairline 테두리 (예전 `button-secondary`).
 **`button-on-color`** — 채도 카드 위에서만. 흰 배경 + 잉크 텍스트.
-**`icon-button`** — 44dp 터치 영역. 아이콘이 20dp여도 터치는 44dp다.
+**`icon-button`** — 시각 40dp 원, 터치 44dp(`hitSlop`), 아이콘 24dp. 누르면 `{colors.surface-card}` 원이 깔린다. `floating` 변형은 지도 위에서 흰 원 + `{elevation.card}`로 타일과 분리한다.
 **`fab`** — 56dp 원형. 지도 화면의 장소 추가에만 쓴다. 리스트 화면은 `bottom-cta-bar`를 쓴다.
 
 누르는 상태는 `Pressable`의 `pressed`로 `{components.button-primary-pressed}` 배경만 바꾼다. 웹의 hover 개념은 없다.
+
+### 리스트
+**`list-row`** — 높이 56(부제 있으면 64), `leading`은 아이콘이나 44dp 썸네일, `trailing`은 셰브론·스위치·값 텍스트. **행 구분선을 두지 않는다** — `list-group` 사이 간격이 구분한다. S02·S21 설정, S11 저장함, S09 장소, S04 검색 결과, 시트 안 행.
+
+**`section-header`** — 제목 + 오른쪽 텍스트/아이콘 액션(`모두 보기`, 카테고리 `더보기`). S01 연도, S17 일차, S16 카테고리, S04 지역.
 
 ### 카드
 **`trip-card`** / **`trip-card-active`** — S01 홈. 진행중 1건만 `{colors.brand-teal}` 채도 카드로 승격하고 나머지는 크림 카드다. 홈에서 눈이 가야 할 곳이 하나로 고정된다.
@@ -659,23 +764,27 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 ### 입력
 **`text-input`** — 48dp, `{rounded.md}`, hairline 테두리. 포커스 시 테두리가 잉크 1.5dp로 두꺼워진다.
 **`text-input-error`** — 테두리 `{colors.error}` + 아래 caption 메시지. **에러는 색만으로 표시하지 않는다** — 메시지 텍스트가 항상 함께 간다.
-**`search-bar`** — 크림 카드 배경 + pill. S04 도시 검색, S15 장소 검색.
+**`text-field`** — `text-input`을 감싸는 조합: 위 라벨 + 입력 + 아래 헬퍼/에러. 값이 있고 포커스면 오른쪽에 지우기 아이콘. `multiline`이면 96dp Textarea. **화면마다 `Field` 헬퍼를 새로 만들지 않는다.**
+**`search-bar`** — 선행 검색 아이콘 + 크림 카드 pill 40dp + 지우기, 포커스 시 오른쪽 `취소`. 제출은 키보드 search 키이고 **별도 검색 버튼을 두지 않는다**. S04 도시 검색, S15 장소 검색, S09 내 장소 검색. 지도 위에서는 `search-bar-elevated`.
 **`amount-input`** — S18 금액. `{typography.display-md}` + `tabular-nums`.
 
 ### 선택
-**`chip`** / **`chip-selected`** — S06 동행·성향, S07 AI 질문. 선택 시 near-black 채움. 36dp 높이지만 터치 영역은 44dp를 확보한다.
-**`segment-tab`** / **`segment-tab-active`** — S09 카테고리, S11 필터, S13 day 필터. 활성만 크림 카드 배경.
-**`checkbox`** — S16 체크리스트, S14 방문 완료. 24dp + `hitSlop: 10`.
+**`chip`** / **`chip-selected`** — S06 동행·성향, S07 AI 질문. 선택 시 near-black 채움. 36dp 높이지만 터치 영역은 44dp를 확보한다. `leadingIcon`(16dp)으로 카테고리·지도 필터를, `onDismiss`로 해제 아이콘을 붙인다 — `이름 · 해제` 같은 문자열을 쓰지 않는다.
+**`segmented-control`** — 필 컨테이너 + 채워진 선택, 2~3개 균등폭. S17 일차별/카테고리별, S13 지도뷰/리스트, S04 국내/해외.
+**`tabs`** — 밑줄 인디케이터 + 가로 스크롤 + 개수 `badge`. **4개 이상이면 세그먼트가 아니라 탭이다.** S01 다가오는/지난, S11 필터, S13 일차, S15 소스.
+**`badge`** — 개수(탭 라벨 옆)와 상태(`D-3` · `여행 중` · `지난 여행`). `accent`/`dark` 변형은 화면당 한 곳에만.
+**`checkbox`** — S16 체크리스트, S14 방문 완료, S15 선택. 24dp + `hitSlop: 10`, on이면 잉크 채움 + check 아이콘.
 **`progress-bar`** — S07 5단계 진행. 4dp 트랙.
 
 ### 오버레이
-**`bottom-sheet`** — BS1 장소 퀵 액션, BS2 생성 방식, BS3 일차 선택. 상단 두 모서리만 24dp, 36×4 핸들, 뒤에 scrim. `paddingBottom`에 bottom inset.
+**`bottom-sheet`** — BS1 장소 퀵 액션, BS2 생성 방식, BS3 일차 선택이 **같은 컴포넌트**를 쓴다. 상단 두 모서리만 24dp, 36×4 핸들, 제목 + 닫기 `icon-button`, 뒤에 scrim. `paddingBottom`에 bottom inset.
+라우트 자체가 `transparentModal`인 시트(S03)는 `asModal={false}`로 Modal 래퍼 없이 그린다 — 모달 안에 모달을 넣지 않는다.
 
 **`toast`** — 시스템에서 유일하게 어두운 표면. 짧게 뜨고 사라지므로 크림 계약을 깨지 않는다.
 
 ### 지도
 **`map-preview`** — S10 상단 접기/펼치기. 160 ↔ 320dp.
-**`map-pin`** / **`map-pin-selected`** — 28dp 원형 순번 핀, 크림 2dp 테두리로 지도 위에서 분리된다. 선택 시 `{colors.brand-pink}` 34dp.
+**`map-pin`** / **`map-pin-selected`** — 36dp 원형 순번 핀(템플릿 NumberedPin), 크림 2dp 테두리로 지도 위에서 분리된다. 선택 시 `{colors.brand-pink}` 42dp.
 **`map-route`** — 일차 경로 점선. `lineDashPattern: [4, 6]`.
 
 지도 타일 색은 우리가 통제하지 않는다. 지도 위 요소는 **테두리로 분리**하고 색에만 의존하지 않는다.
@@ -741,7 +850,9 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 
 ## 미결 항목
 
-- **Pretendard 파일 미복사.** `duego-saas-mobile-v2/assets/font/`에서 4종 OTF를 가져오고 `expo-font`를 설치해야 한다.
 - **3D 클레이 자산 0개.** § 자산 로드맵 우선순위대로 확보한다.
 - **지도 스타일 미정.** `react-native-maps` 커스텀 스타일로 크림 톤을 맞출지, 기본 타일을 쓸지.
-- **접근성 부분 검증.** 대비비는 실측했다(§ 대비). 터치 영역·스크린리더 라벨·Dynamic Type 실기기 확인은 남았다.
+- **접근성 부분 검증.** 대비비는 실측했다(§ 대비). 터치 영역·스크린리더 라벨·Dynamic Type 실기기 확인은 남았다. 아이콘 버튼은 라벨이 유일한 설명이라 VoiceOver 확인이 특히 중요하다.
+
+아이콘 세트는 해소됐다: Designbase 템플릿(유료 구매)에서 24dp 단색 SVG를 `assets/icons/`로 가져왔고 `components/Icon.tsx`가 `expo-image`의 `tintColor`로 그린다.
+출처 표와 재추출 스크립트는 `assets/icons/README.md`와 `docs/references/designbase-app-ui/`에 있다. **다른 아이콘 팩을 섞지 않는다.**

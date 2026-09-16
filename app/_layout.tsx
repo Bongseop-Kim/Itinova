@@ -68,6 +68,7 @@ export default function RootLayout() {
           options={{ presentation: 'transparentModal', headerShown: false, animation: 'fade' }}
         />
         <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="place/[placeId]" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

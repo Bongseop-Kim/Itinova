@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import RangeCalendar, { type Range } from '../../components/RangeCalendar';
 import { BottomCtaBar, ScreenHeader } from '../../components/ui';
 import { tripLength } from '../../lib/calendar';
+import { dateRangeLabel } from '../../lib/date';
 import { colors, spacing, type as t } from '../../theme';
 
 export default function Dates() {
@@ -21,9 +22,15 @@ export default function Dates() {
 
       <RangeCalendar range={range} onChange={setRange} />
 
+      {/* 템플릿 날짜선택: 왼쪽에 고른 범위, 오른쪽에 다음 (BottomCtaBar info 변형) */}
       <BottomCtaBar
-        label={complete ? `${tripLength(range.start!, range.end!)}  ·  다음` : '날짜를 선택해 주세요'}
+        label="다음"
         disabled={!complete}
+        info={
+          complete
+            ? { title: dateRangeLabel(range.start!, range.end!, 'md'), sub: tripLength(range.start!, range.end!) }
+            : { title: '날짜를 선택해 주세요', sub: range.start ? '종료일을 눌러 주세요' : undefined }
+        }
         onPress={() =>
           router.push({
             pathname: '/create/style',

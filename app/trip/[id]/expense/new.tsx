@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { BottomCtaBar, Chip, ScreenHeader } from '../../../../components/ui';
+import { BottomCtaBar, Chip, ChipRow, ScreenHeader, TextField } from '../../../../components/ui';
 import { db } from '../../../../db';
 import { createExpense, expensePlaceQuery, tripDaysQuery } from '../../../../db/expenses';
 import { dayItems, places, savedPlaces, tripDays, trips } from '../../../../db/schema';
@@ -11,7 +11,7 @@ import { dayMeta } from '../../../../lib/date';
 import { expenseDay, initialExpenseCurrency, EXPENSE_CATEGORIES, PAYMENT_METHODS } from '../../../../lib/expense';
 import { useDbQuery } from '../../../../lib/useDbQuery';
 import { useTripId } from '../../../../lib/useTripId';
-import { colors, rounded, sizing, spacing, type as t } from '../../../../theme';
+import { colors, spacing, type as t } from '../../../../theme';
 
 export default function NewExpense() {
   const id = useTripId();
@@ -41,6 +41,7 @@ export default function NewExpense() {
   const [method, setMethod] = useState<string>(PAYMENT_METHODS[0]);
 
   const parsed = Number(amount.replace(/[^0-9.]/g, ''));
+  const amountError = amount && !(Number.isFinite(parsed) && parsed > 0) ? '0보다 큰 숫자를 입력해 주세요' : undefined;
   const valid = Number.isFinite(parsed) && parsed > 0 && !!title.trim() && !!currency && !!days;
 
   const submit = () => {
@@ -74,37 +75,26 @@ export default function NewExpense() {
           keyboardType="decimal-pad"
           accessibilityLabel="금액"
         />
-        <View style={s.chips}>
+        {amountError ? <Text style={s.error} accessibilityRole="alert">{amountError}</Text> : null}
+        <ChipRow>
           {currencies.map((c) => (
             <Chip key={c} label={c} selected={currency === c} onPress={() => setCurrency(c)} />
           ))}
-        </View>
+        </ChipRow>
 
-        <Field label="항목명">
-          <TextInput
-            style={s.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="무엇에 썼나요?"
-            placeholderTextColor={colors.mutedSoft}
-          />
-        </Field>
+        <TextField label="항목명" value={title} onChangeText={setTitle} placeholder="무엇에 썼나요?" style={s.field} />
 
-        <Field label="카테고리">
-          <View style={s.chips}>
+        <ChipField label="카테고리">
+          <ChipRow>
             {EXPENSE_CATEGORIES.map((c) => (
               <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(c)} />
             ))}
-          </View>
-        </Field>
+          </ChipRow>
+        </ChipField>
 
-        <Field label="일차">
-          <View style={s.chips}>
-            <Chip
-              label="미지정"
-              selected={dayIndex == null}
-              onPress={() => setSelectedDay(null)}
-            />
+        <ChipField label="일차">
+          <ChipRow>
+            <Chip label="미지정" selected={dayIndex == null} onPress={() => setSelectedDay(null)} />
             {(days ?? []).map((d) => (
               <Chip
                 key={d.dayIndex}
@@ -113,16 +103,16 @@ export default function NewExpense() {
                 onPress={() => setSelectedDay(String(d.dayIndex))}
               />
             ))}
-          </View>
-        </Field>
+          </ChipRow>
+        </ChipField>
 
-        <Field label="결제수단">
-          <View style={s.chips}>
+        <ChipField label="결제수단">
+          <ChipRow>
             {PAYMENT_METHODS.map((m) => (
               <Chip key={m} label={m} selected={method === m} onPress={() => setMethod(m)} />
             ))}
-          </View>
-        </Field>
+          </ChipRow>
+        </ChipField>
 
         {linkedPlaces?.[0] ? <Text style={s.placeName}>연결 장소 · {linkedPlaces[0].name}</Text> : null}
       </ScrollView>
@@ -132,7 +122,8 @@ export default function NewExpense() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** 칩 그룹 라벨. 입력 필드는 TextField 가 라벨을 갖는다. */
+function ChipField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={s.field}>
       <Text style={s.fieldLabel}>{label}</Text>
@@ -151,18 +142,8 @@ const s = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     paddingVertical: spacing.sm,
   },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-
+  error: { ...t.caption, color: colors.error },
   field: { paddingTop: spacing.md, gap: spacing.xs },
-  fieldLabel: { ...t.captionUpper, color: colors.muted },
+  fieldLabel: { ...t.caption, color: colors.muted },
   placeName: { ...t.bodySm, color: colors.muted },
-  input: {
-    ...t.bodyMd,
-    color: colors.ink,
-    minHeight: sizing.controlH,
-    borderRadius: rounded.md,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    paddingHorizontal: spacing.md,
-  },
 });

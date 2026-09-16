@@ -2,7 +2,15 @@
 import { Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { ColorValue } from 'react-native';
+
+import { Icon, type IconName } from '../../../../components/Icon';
 import { colors, sizing, type as t } from '../../../../theme';
+
+// 템플릿 아이콘 outline/filled 짝. 활성이면 filled.
+const tabIcon = (name: IconName) => ({ focused, color }: { focused: boolean; color: ColorValue }) => (
+  <Icon name={focused ? (`${name}-filled` as IconName) : name} color={color as string} />
+);
 
 export default function TripTabsLayout() {
   const insets = useSafeAreaInsets();
@@ -22,16 +30,12 @@ export default function TripTabsLayout() {
         tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.mutedSoft,
         tabBarLabelStyle: t.tabLabel,
-        // 아이콘 세트가 미정이다 (design-system.md §자산 로드맵에 탭 아이콘 없음).
-        // 기본 플레이스홀더(▼)가 나오는 것보다 라벨만 두는 편이 낫다.
-        tabBarIcon: () => null,
-        tabBarIconStyle: { display: 'none' },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: '여행 홈' }} />
-      <Tabs.Screen name="itinerary" options={{ title: '일정' }} />
-      <Tabs.Screen name="saved" options={{ title: '저장' }} />
-      <Tabs.Screen name="tools" options={{ title: '도구' }} />
+      <Tabs.Screen name="index" options={{ title: '여행 홈', tabBarIcon: tabIcon('home') }} />
+      <Tabs.Screen name="itinerary" options={{ title: '일정', tabBarIcon: tabIcon('calendar') }} />
+      <Tabs.Screen name="saved" options={{ title: '저장', tabBarIcon: tabIcon('bookmark') }} />
+      <Tabs.Screen name="tools" options={{ title: '도구', tabBarIcon: tabIcon('tools') }} />
     </Tabs>
   );
 }

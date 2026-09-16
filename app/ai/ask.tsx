@@ -8,7 +8,7 @@ export default function AiAsk() {
   const router = useRouter();
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
-      <ScreenHeader title="AI 일정 추천" action="뒤로" onAction={() => router.back()} />
+      <ScreenHeader title="AI 일정 추천" />
       <Text style={{ ...t.bodyMd, color: colors.muted, padding: spacing.gutter, flex: 1 }}>
         AI 일정 추천은 준비 중이에요.
       </Text>

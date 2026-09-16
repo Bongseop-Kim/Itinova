@@ -1,21 +1,10 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenHeader } from '../components/ui';
+import { Icon, ListGroup, ListRow, ScreenHeader, TextField } from '../components/ui';
 import { exportAllJson, importTrips } from '../db/backup';
 import { appSettings } from '../db/schema';
 import { DATE_FORMAT, setSetting, settingsQuery } from '../db/settings';
@@ -60,47 +49,36 @@ export default function AppSettings() {
     }
   };
 
+  const check = <Icon name="check" size={sizing.iconMd} />;
+
   return (
     <KeyboardAvoidingView style={s.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScreenHeader title="앱 설정" />
-      <ScrollView
-        contentContainerStyle={[s.content, { paddingBottom: spacing.xxl + insets.bottom }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Field label="데이터">
-          <Pressable onPress={exportAll} accessibilityRole="button" style={s.row}>
-            <Text style={s.rowValue}>전체 데이터 내보내기</Text>
-            <Text style={s.rowAction}>JSON</Text>
-          </Pressable>
-          <Pressable
+      <ScreenHeader title="앱 설정" largeTitle />
+      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxl + insets.bottom }} keyboardShouldPersistTaps="handled">
+        <ListGroup title="데이터">
+          <ListRow title="전체 데이터 내보내기" subtitle="JSON" leading="share" trailing="chevron" onPress={exportAll} />
+          <ListRow
+            title="데이터 가져오기"
+            subtitle="내보내기로 만든 JSON 붙여넣기"
+            leading="plus"
+            trailing={<Icon name={importing ? 'chevron-up' : 'chevron-down'} size={sizing.iconMd} color={colors.mutedSoft} />}
             onPress={() => setImporting((v) => !v)}
-            accessibilityRole="button"
-            style={s.row}
-          >
-            <Text style={s.rowValue}>데이터 가져오기</Text>
-            <Text style={s.rowAction}>{importing ? '접기' : 'JSON'}</Text>
-          </Pressable>
-          <Text style={s.meta}>
-            여행 데이터는 이 기기에만 있습니다. 내보내기가 유일한 백업·기기 이전 수단이에요.
-          </Text>
-        </Field>
+          />
+          <Text style={s.meta}>여행 데이터는 이 기기에만 있습니다. 내보내기가 유일한 백업·기기 이전 수단이에요.</Text>
+        </ListGroup>
 
         {importing ? (
           <View style={s.importer}>
-            <TextInput
-              style={s.textarea}
+            <TextField
               value={text}
               onChangeText={setText}
               placeholder="내보내기로 만든 JSON 을 붙여넣어 주세요"
-              placeholderTextColor={colors.mutedSoft}
+              helper="이미 있는 여행과 겹치면 덮어쓰지 않고 새 여행으로 추가합니다."
               multiline
-              textAlignVertical="top"
               autoCapitalize="none"
               autoCorrect={false}
+              inputStyle={s.textarea}
             />
-            <Text style={s.meta}>
-              이미 있는 여행과 겹치면 덮어쓰지 않고 새 여행으로 추가합니다.
-            </Text>
             <Pressable
               onPress={runImport}
               disabled={!text.trim()}
@@ -112,74 +90,29 @@ export default function AppSettings() {
           </View>
         ) : null}
 
-        <Field label="표시">
-          <Pressable
-            onPress={() => setSetting(DATE_FORMAT, 'ymd')}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: dateFormat === 'ymd' }}
-            style={s.row}
-          >
-            <Text style={s.rowValue}>날짜 형식</Text>
-            <Text style={s.rowAction}>YYYY.M.D{dateFormat === 'ymd' ? ' ✓' : ''}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setSetting(DATE_FORMAT, 'md')}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: dateFormat === 'md' }}
-            style={s.row}
-          >
-            <Text style={s.rowValue}>날짜 형식</Text>
-            <Text style={s.rowAction}>M/D{dateFormat === 'md' ? ' ✓' : ''}</Text>
-          </Pressable>
-          <View style={s.row}>
-            <Text style={s.rowValue}>언어</Text>
-            <Text style={s.rowAction}>한국어</Text>
-          </View>
-        </Field>
+        <ListGroup title="날짜 형식">
+          <ListRow title="YYYY.M.D" subtitle="2026.9.16" trailing={dateFormat === 'ymd' ? check : undefined} onPress={() => setSetting(DATE_FORMAT, 'ymd')} />
+          <ListRow title="M/D" subtitle="9/16" trailing={dateFormat === 'md' ? check : undefined} onPress={() => setSetting(DATE_FORMAT, 'md')} />
+        </ListGroup>
 
-        <Field label="앱 정보">
-          <View style={s.row}>
-            <Text style={s.rowValue}>버전</Text>
-            <Text style={s.rowAction}>{Constants.expoConfig?.version ?? '—'}</Text>
-          </View>
-        </Field>
+        <ListGroup title="표시">
+          <ListRow title="언어" trailing="한국어" />
+        </ListGroup>
+
+        <ListGroup title="앱 정보">
+          <ListRow title="버전" trailing={Constants.expoConfig?.version ?? '—'} />
+        </ListGroup>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={s.field}>
-      <Text style={s.fieldLabel}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  content: { paddingHorizontal: spacing.gutter },
-
-  field: { paddingTop: spacing.lg, gap: spacing.xxs },
-  fieldLabel: { ...t.captionUpper, color: colors.muted, paddingBottom: spacing.xxs },
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: sizing.touchMin, gap: spacing.sm },
-  rowValue: { ...t.bodyMd, color: colors.ink, flexGrow: 1 },
-  rowAction: { ...t.button, color: colors.muted },
-  meta: { ...t.caption, color: colors.muted, paddingTop: spacing.xxs },
-
-  importer: { paddingTop: spacing.sm, gap: spacing.xs },
-  textarea: {
-    ...t.bodySm,
-    color: colors.ink,
-    // 붙여넣은 백업이 길면 입력칸이 무한정 늘어나 버튼이 화면 밖으로 밀린다. 안에서 스크롤시킨다.
-    minHeight: 160,
-    maxHeight: 200,
-    borderRadius: rounded.md,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    padding: spacing.sm,
-  },
+  meta: { ...t.caption, color: colors.muted, paddingHorizontal: spacing.gutter, paddingTop: spacing.xxs },
+  importer: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, gap: spacing.sm },
+  // 붙여넣은 백업이 길면 입력칸이 무한정 늘어나 버튼이 화면 밖으로 밀린다. 안에서 스크롤시킨다.
+  textarea: { ...t.bodySm, minHeight: 160, maxHeight: 200 },
   cta: {
     minHeight: sizing.controlH,
     borderRadius: rounded.md,

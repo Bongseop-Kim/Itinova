@@ -1,13 +1,11 @@
-import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 
 import RangeCalendar, { type Range } from '../../../components/RangeCalendar';
-import { Chip, ScreenHeader } from '../../../components/ui';
-import { db } from '../../../db';
+import { Chip, ChipRow, ListGroup, ListRow, ScreenHeader, TextField } from '../../../components/ui';
 import { exportTripJson } from '../../../db/backup';
-import { dayItems, savedPlaces, tripDays, trips } from '../../../db/schema';
+import { trips } from '../../../db/schema';
 import {
   changeTripDates,
   countItemsInDays,
@@ -17,6 +15,7 @@ import {
   updateTripBasics,
 } from '../../../db/updateTrip';
 import { tripLength } from '../../../lib/calendar';
+import { dateRangeLabel } from '../../../lib/date';
 import { dateChangeWarning, planDateChange } from '../../../lib/tripDates';
 import { COMPANIONS, CURRENCIES, STYLES } from '../../../lib/tripStyle';
 import { useDbQuery } from '../../../lib/useDbQuery';
@@ -50,7 +49,7 @@ export default function TripSettings() {
   if (!trip) {
     return (
       <View style={s.screen}>
-        <ScreenHeader title="여행 설정" />
+        <ScreenHeader title="여행 설정" largeTitle />
       </View>
     );
   }
@@ -103,35 +102,30 @@ export default function TripSettings() {
 
   return (
     <View style={s.screen}>
-      <ScreenHeader title="여행 설정" />
+      <ScreenHeader title="여행 설정" largeTitle />
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <Field label="제목">
-          <TextInput
-            style={s.input}
+        <View style={s.gutter}>
+          <TextField
+            label="제목"
             value={title}
             onChangeText={setTitle}
             onEndEditing={() => updateTripBasics(id, { title: title.trim() || trip.title })}
             placeholder="여행 제목"
-            placeholderTextColor={colors.mutedSoft}
           />
-        </Field>
+        </View>
 
-        <Field label="날짜">
-          <Pressable
+        <ListGroup title="날짜">
+          <ListRow
+            title={dateRangeLabel(trip.startDate, trip.endDate)}
+            subtitle={tripLength(trip.startDate, trip.endDate)}
+            leading="calendar"
+            trailing={editingDates ? '접기' : '변경'}
             onPress={() => {
               setEditingDates((v) => !v);
               setRange({});
             }}
-            accessibilityRole="button"
-            style={s.row}
-          >
-            <Text style={s.rowValue}>
-              {trip.startDate} ~ {trip.endDate}
-            </Text>
-            <Text style={s.rowAction}>{editingDates ? '접기' : '변경'}</Text>
-          </Pressable>
-          <Text style={s.rowMeta}>{tripLength(trip.startDate, trip.endDate)}</Text>
-        </Field>
+          />
+        </ListGroup>
 
         {editingDates ? (
           <View style={s.calendar}>
@@ -144,105 +138,64 @@ export default function TripSettings() {
               style={[s.apply, (!range.start || !range.end) && s.applyOff]}
             >
               <Text style={[s.applyLabel, (!range.start || !range.end) && s.applyLabelOff]}>
-                {range.start && range.end
-                  ? `${tripLength(range.start, range.end)} 로 변경`
-                  : '날짜를 선택해 주세요'}
+                {range.start && range.end ? `${tripLength(range.start, range.end)} 로 변경` : '날짜를 선택해 주세요'}
               </Text>
             </Pressable>
           </View>
         ) : null}
 
-        <Field label="동행">
-          <View style={s.chips}>
-            {COMPANIONS.map((c) => (
-              <Chip
-                key={c}
-                label={c}
-                selected={trip.companion === c}
-                onPress={() => updateTripBasics(id, { companion: trip.companion === c ? null : c })}
-              />
-            ))}
+        <ListGroup title="동행">
+          <View style={s.gutter}>
+            <ChipRow>
+              {COMPANIONS.map((c) => (
+                <Chip
+                  key={c}
+                  label={c}
+                  selected={trip.companion === c}
+                  onPress={() => updateTripBasics(id, { companion: trip.companion === c ? null : c })}
+                />
+              ))}
+            </ChipRow>
           </View>
-        </Field>
+        </ListGroup>
 
-        <Field label="성향">
-          <View style={s.chips}>
-            {STYLES.map((v) => (
-              <Chip key={v} label={v} selected={styles.includes(v)} onPress={() => toggleStyle(v)} />
-            ))}
+        <ListGroup title="성향">
+          <View style={s.gutter}>
+            <ChipRow>
+              {STYLES.map((v) => (
+                <Chip key={v} label={v} selected={styles.includes(v)} onPress={() => toggleStyle(v)} />
+              ))}
+            </ChipRow>
           </View>
-        </Field>
+        </ListGroup>
 
-        <Field label="기본 통화">
-          <View style={s.chips}>
-            {CURRENCIES.map((c) => (
-              <Chip
-                key={c}
-                label={c}
-                selected={trip.currency === c}
-                onPress={() => updateTripBasics(id, { currency: c })}
-              />
-            ))}
+        <ListGroup title="기본 통화">
+          <View style={s.gutter}>
+            <ChipRow>
+              {CURRENCIES.map((c) => (
+                <Chip key={c} label={c} selected={trip.currency === c} onPress={() => updateTripBasics(id, { currency: c })} />
+              ))}
+            </ChipRow>
           </View>
-        </Field>
+        </ListGroup>
 
-        <Field label="데이터">
-          <Pressable onPress={exportJson} accessibilityRole="button" style={s.row}>
-            <Text style={s.rowValue}>JSON 내보내기</Text>
-            <Text style={s.rowAction}>이 여행만</Text>
-          </Pressable>
-          <Text style={s.rowMeta}>
-            여행 데이터는 이 기기에만 있습니다. 내보내기가 유일한 백업 수단이에요.
-          </Text>
-        </Field>
+        <ListGroup title="데이터">
+          <ListRow title="JSON 내보내기" subtitle="이 여행만 · 유일한 백업 수단" leading="share" trailing="chevron" onPress={exportJson} />
+        </ListGroup>
 
-        <Pressable onPress={confirmDelete} accessibilityRole="button" style={s.delete}>
-          <Text style={s.deleteLabel}>여행 삭제</Text>
-        </Pressable>
+        <ListGroup>
+          <ListRow title="여행 삭제" leading="trash" destructive onPress={confirmDelete} />
+        </ListGroup>
       </ScrollView>
-    </View>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={s.field}>
-      <Text style={s.fieldLabel}>{label}</Text>
-      {children}
     </View>
   );
 }
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  content: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
-
-  field: { paddingTop: spacing.lg, gap: spacing.xs },
-  fieldLabel: { ...t.captionUpper, color: colors.muted },
-  input: {
-    ...t.bodyMd,
-    color: colors.ink,
-    minHeight: sizing.controlH,
-    borderRadius: rounded.md,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    paddingHorizontal: spacing.md,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: sizing.touchMin,
-    gap: spacing.sm,
-  },
-  rowValue: { ...t.bodyMd, color: colors.ink, flexGrow: 1 },
-  rowAction: { ...t.button, color: colors.ink },
-  rowMeta: { ...t.caption, color: colors.muted },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-
-  calendar: {
-    marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
+  content: { paddingBottom: spacing.xxl },
+  gutter: { paddingHorizontal: spacing.gutter },
+  calendar: { marginTop: spacing.xs, paddingHorizontal: spacing.gutter, gap: spacing.xs },
   warning: { ...t.bodySm, color: colors.warning },
   apply: {
     minHeight: sizing.controlH,
@@ -254,15 +207,4 @@ const s = StyleSheet.create({
   applyOff: { backgroundColor: colors.primaryDisabled },
   applyLabel: { ...t.button, color: colors.onPrimary },
   applyLabelOff: { color: colors.muted },
-
-  delete: {
-    marginTop: spacing.section,
-    minHeight: sizing.controlH,
-    borderRadius: rounded.md,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteLabel: { ...t.button, color: colors.error },
 });

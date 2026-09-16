@@ -22,7 +22,9 @@ export default function NativeMap({ pins, routes = [], center = null, selectedId
       // expo-maps iOS의 annotation 이미지는 50pt 고정 프레임이다. 투명 여백으로 핀 토큰 크기를 유지한다.
       const canvas = Platform.OS === 'ios' ? 50 : size;
       const pixels = Platform.OS === 'android' ? canvas * PixelRatio.get() : canvas;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pixels}" height="${pixels}" viewBox="0 0 ${canvas} ${canvas}"><circle cx="${canvas / 2}" cy="${canvas / 2}" r="${(size - mapStyle.pinBorderWidth) / 2}" fill="${selected === 'true' ? colors.brandPink : colors.primary}" stroke="${colors.canvas}" stroke-width="${mapStyle.pinBorderWidth}"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" font-family="${t.caption.fontFamily}" font-size="${t.caption.fontSize}" fill="${colors.onPrimary}">${order}</text></svg>`;
+      // 템플릿 Map Markers NumberedPin: 36dp 원 + 숫자. 잉크 채움, 크림 2dp 테두리 (지도 타일 색과 분리), 선택은 핑크.
+      const r = (size - mapStyle.pinBorderWidth) / 2;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pixels}" height="${pixels}" viewBox="0 0 ${canvas} ${canvas}"><circle cx="${canvas / 2}" cy="${canvas / 2}" r="${r}" fill="${selected === 'true' ? colors.brandPink : colors.primary}" stroke="${colors.canvas}" stroke-width="${mapStyle.pinBorderWidth}"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" font-family="${t.caption.fontFamily}" font-weight="600" font-size="${selected === 'true' ? t.caption.fontSize + 1 : t.caption.fontSize}" fill="${colors.onPrimary}">${order}</text></svg>`;
       return [key, await Image.loadAsync(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`)] as const;
     })).then((entries) => { if (active) setIcons(Object.fromEntries(entries)); }).catch(() => { if (active) setIcons({}); });
     return () => { active = false; };

@@ -2,14 +2,13 @@ import { eq } from 'drizzle-orm';
 import { Link, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PlaceMap from '../../../../components/PlaceMap';
 import PlaceQuickActions from '../../../../components/PlaceQuickActions';
 import { useTripWeather } from '../../../../lib/useTravelData';
 import { weatherSummary } from '../../../../lib/travelTools';
 import { mapData } from '../../../../lib/map';
-import { type Href } from '../../../../components/ui';
+import { Chip, Icon, IconButton, ScreenHeader } from '../../../../components/ui';
 import { db } from '../../../../db';
 import { appSettings, dayItems, places, tripDays, trips } from '../../../../db/schema';
 import { DATE_FORMAT, settingsQuery } from '../../../../db/settings';
@@ -24,7 +23,6 @@ import { useTripId } from '../../../../lib/useTripId';
 export default function Itinerary() {
   const id = useTripId();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [selectedItem, setSelectedItem] = useState<string>();
   const [mapExpanded, setMapExpanded] = useState(false);
   const settings = useDbQuery(settingsQuery, [appSettings], []);
@@ -63,27 +61,25 @@ export default function Itinerary() {
 
   if (!trip) {
     return (
-      <View style={[s.screen, s.centered, { paddingTop: insets.top }]}>
-        <Text style={s.emptyTitle}>여행을 찾을 수 없어요</Text>
-        <Text style={s.emptyBody}>홈에서 여행을 다시 선택해 주세요.</Text>
+      <View style={s.screen}>
+        <ScreenHeader title="일정" backLabel="홈으로" onBack={() => router.navigate('/')} />
+        <View style={s.centered}>
+          <Text style={s.emptyTitle}>여행을 찾을 수 없어요</Text>
+          <Text style={s.emptyBody}>홈에서 여행을 다시 선택해 주세요.</Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={[s.screen, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        {/* 탭 화면에서 router.back() 은 이전 '탭' 으로 돌아간다. 홈으로 나가려면 명시적으로 이동한다. */}
-        <Pressable onPress={() => router.navigate('/')} hitSlop={10} accessibilityRole="button" accessibilityLabel="홈으로">
-          <Text style={s.headerBack}>홈</Text>
-        </Pressable>
-        <Text style={s.headerTitle} numberOfLines={1}>
-          {trip.title}
-        </Text>
-        <Link href={`/trip/${id}/edit`} style={s.headerAction} accessibilityRole="link">
-          편집
-        </Link>
-      </View>
+    <View style={s.screen}>
+      {/* 탭 화면에서 router.back() 은 이전 '탭' 으로 돌아간다. 홈으로 나가려면 명시적으로 이동한다. */}
+      <ScreenHeader
+        title={trip.title}
+        backLabel="홈으로"
+        onBack={() => router.navigate('/')}
+        actions={[{ icon: 'edit', label: '일정 편집', onPress: () => router.push(`/trip/${id}/edit`) }]}
+      />
 
       <SectionList
         sections={sections}
@@ -94,19 +90,17 @@ export default function Itinerary() {
           <View style={s.listHeader}>
             <View style={[s.mapPreview, { height: mapExpanded ? mapStyle.expandedHeight : mapStyle.collapsedHeight }]}>
               <PlaceMap {...mapData(sections)} center={trip.lat != null && trip.lng != null ? { lat: trip.lat, lng: trip.lng } : null} onPinPress={setSelectedItem} />
-            </View>
-            <View style={s.quickChips}>
-              <QuickChip href={`/trip/${id}/map`} label="전체 지도" />
-              <Pressable accessibilityRole="button" onPress={() => setMapExpanded((v) => !v)} style={s.chip}>
-                <Text style={s.chipLabel}>{mapExpanded ? '지도 접기' : '지도 펼치기'}</Text>
-              </Pressable>
+              <View style={s.mapActions}>
+                <IconButton icon="map" label="전체 지도" floating onPress={() => router.push(`/trip/${id}/map`)} />
+                <IconButton icon={mapExpanded ? 'chevron-up' : 'chevron-down'} label={mapExpanded ? '지도 접기' : '지도 펼치기'} floating onPress={() => setMapExpanded((v) => !v)} />
+              </View>
             </View>
 
             <Link href={`/trip/${id}/tools`} style={s.dayMeta} accessibilityRole="link">{weather.error ? '날씨 연결 실패 · 도구에서 다시 시도' : '날씨: Open-Meteo · 예보와 출처 보기'}</Link>
             <View style={s.quickChips}>
-              <QuickChip href={`/trip/${id}/checklist`} label="체크리스트" />
-              <QuickChip href={`/trip/${id}/budget`} label="가계부" />
-              <QuickChip href={`/trip/${id}/chat`} label="AI에게 묻기" />
+              <Chip label="체크리스트" leadingIcon="check" onPress={() => router.push(`/trip/${id}/checklist`)} />
+              <Chip label="가계부" leadingIcon="wallet" onPress={() => router.push(`/trip/${id}/budget`)} />
+              <Chip label="AI에게 묻기" onPress={() => router.push(`/trip/${id}/chat`)} />
             </View>
           </View>
         }
@@ -131,6 +125,7 @@ export default function Itinerary() {
         renderSectionFooter={({ section }) => (
           <Link href={`/trip/${id}/add-place?day=${section.dayIndex}`} asChild>
             <Pressable style={s.addRow} accessibilityRole="button">
+              <Icon name="plus" size={sizing.iconMd} color={colors.muted} />
               <Text style={s.addLabel}>장소 추가</Text>
             </Pressable>
           </Link>
@@ -138,16 +133,6 @@ export default function Itinerary() {
       />
       {selectedItem && <PlaceQuickActions key={selectedItem} itemId={selectedItem} onClose={() => setSelectedItem(undefined)} />}
     </View>
-  );
-}
-
-function QuickChip({ href, label }: { href: Href; label: string }) {
-  return (
-    <Link href={href} asChild>
-      <Pressable style={s.chip} accessibilityRole="button">
-        <Text style={s.chipLabel}>{label}</Text>
-      </Pressable>
-    </Link>
   );
 }
 
@@ -168,27 +153,21 @@ function ItineraryCard({ item, order, onPress }: { item: Item; order: number; on
           {[categoryLabel(item.category), item.region].filter(Boolean).join(' · ')}
         </Text>
       </View>
-      {item.startTime ? <Text style={s.cardTime}>{item.startTime}</Text> : null}
+      {item.startTime ? (
+        <View style={s.time}>
+          <Icon name="clock" size={sizing.iconSm} color={colors.muted} />
+          <Text style={s.cardTime}>{item.startTime}</Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas },
-  centered: { justifyContent: 'center', paddingHorizontal: spacing.gutter, gap: spacing.xxs },
+  centered: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.gutter, gap: spacing.xxs },
   emptyTitle: { ...t.titleMd, color: colors.ink },
   emptyBody: { ...t.bodySm, color: colors.muted },
-
-  header: {
-    minHeight: sizing.headerH,
-    paddingHorizontal: spacing.gutter,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  headerBack: { ...t.button, color: colors.muted, minHeight: sizing.touchMin, lineHeight: sizing.touchMin },
-  headerTitle: { ...t.titleLg, color: colors.ink, flexGrow: 1 },
-  headerAction: { ...t.button, color: colors.ink, minHeight: sizing.touchMin, lineHeight: sizing.touchMin },
 
   content: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.xxl },
   listHeader: { gap: spacing.sm },
@@ -198,18 +177,9 @@ const s = StyleSheet.create({
     borderRadius: rounded.lg,
     overflow: 'hidden',
   },
+  mapActions: { position: 'absolute', right: spacing.xs, top: spacing.xs, gap: spacing.xs },
 
   quickChips: { flexDirection: 'row', gap: spacing.xs },
-  chip: {
-    minHeight: sizing.controlHSm,
-    paddingHorizontal: spacing.md,
-    borderRadius: rounded.pill,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chipLabel: { ...t.caption, color: colors.muted },
 
   dayHeader: {
     flexDirection: 'row',
@@ -249,6 +219,7 @@ const s = StyleSheet.create({
   cardBody: { flexGrow: 1, flexShrink: 1 },
   cardTitle: { ...t.titleSm, color: colors.ink },
   cardMeta: { ...t.caption, color: colors.muted },
+  time: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs },
   cardTime: { ...t.numeric, color: colors.ink },
 
   addRow: {
@@ -258,6 +229,8 @@ const s = StyleSheet.create({
     borderWidth: sizing.hairline,
     borderColor: colors.hairline,
     borderStyle: 'dashed',
+    flexDirection: 'row',
+    gap: spacing.xxs,
     alignItems: 'center',
     justifyContent: 'center',
   },

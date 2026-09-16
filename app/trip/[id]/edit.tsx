@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PlaceMap from '../../../components/PlaceMap';
 import { mapData } from '../../../lib/map';
-import { ScreenHeader } from '../../../components/ui';
+import { BottomCtaBar, Checkbox, Icon, ScreenHeader } from '../../../components/ui';
 import { db } from '../../../db';
 import { deleteItems, moveItemsToDay, reorderDay, toggleVisited } from '../../../db/dayItems';
 import { dayItems, places, tripDays, trips } from '../../../db/schema';
@@ -35,14 +35,9 @@ function DragHandle({ name, scrollEnabled }: { name: string; scrollEnabled: Shar
     <GestureDetector gesture={touch}>
       <View collapsable={false}>
         <Sortable.Handle style={s.handle}>
-          <Text
-            style={s.handleIcon}
-            accessible
-            accessibilityLabel={`${name} 순서 변경 핸들`}
-            accessibilityHint="위로/아래로 버튼으로 순서를 바꿀 수 있어요"
-          >
-            ≡
-          </Text>
+          <View accessible accessibilityLabel={`${name} 순서 변경 핸들`} accessibilityHint="위로/아래로 버튼으로 순서를 바꿀 수 있어요">
+            <Icon name="drag" color={colors.muted} />
+          </View>
         </Sortable.Handle>
       </View>
     </GestureDetector>
@@ -177,13 +172,7 @@ export default function EditItinerary() {
                 return (
                   <View style={s.row}>
                     <DragHandle name={item.name} scrollEnabled={scrollEnabled} />
-                    <Pressable
-                      onPress={() => toggleSelect(item.id)}
-                      hitSlop={10}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: on }}
-                      style={[s.checkbox, on && s.checkboxOn]}
-                    />
+                    <Checkbox checked={on} label={`${item.name} 선택`} onPress={() => toggleSelect(item.id)} />
                     <Text style={s.order}>{index + 1}</Text>
                     <View style={s.rowBody}>
                       <Text style={[s.name, item.visited && s.nameVisited]} numberOfLines={1}>
@@ -206,7 +195,7 @@ export default function EditItinerary() {
                           accessibilityRole="button"
                           accessibilityLabel="위로"
                         >
-                          <Text style={[s.arrow, index === 0 && s.arrowOff]}>위로</Text>
+                          <Icon name="arrow-up" color={index === 0 ? colors.hairline : colors.ink} />
                         </Pressable>
                         <Pressable
                           onPress={() => move(section as DaySection, index, index + 1)}
@@ -215,7 +204,7 @@ export default function EditItinerary() {
                           accessibilityRole="button"
                           accessibilityLabel="아래로"
                         >
-                          <Text style={[s.arrow, index === section.data.length - 1 && s.arrowOff]}>아래로</Text>
+                          <Icon name="arrow-down" color={index === section.data.length - 1 ? colors.hairline : colors.ink} />
                         </Pressable>
                       </>
                     ) : null}
@@ -228,8 +217,8 @@ export default function EditItinerary() {
       </Animated.ScrollView>
 
       {selected.length ? (
-        <View style={[s.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
-          {movingTo ? (
+        movingTo ? (
+          <View style={[s.bar, { paddingBottom: spacing.sm + insets.bottom }]}>
             <View style={s.dayPicker}>
               <Text style={s.pickerLabel}>어느 일차로 옮길까요?</Text>
               <View style={s.pickerChips}>
@@ -252,24 +241,20 @@ export default function EditItinerary() {
                 </Pressable>
               </View>
             </View>
-          ) : (
-            <View style={s.barButtons}>
-              <Pressable onPress={() => setMovingTo(true)} accessibilityRole="button" style={s.btn}>
-                <Text style={s.btnLabel}>다른 일차로 이동 ({selected.length})</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  deleteItems(selected);
-                  setSelected([]);
-                }}
-                accessibilityRole="button"
-                style={s.btn}
-              >
-                <Text style={[s.btnLabel, s.btnDanger]}>삭제 ({selected.length})</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
+          </View>
+        ) : (
+          // 템플릿 Button-fixed 2버튼. 삭제는 되돌릴 수 없으므로 주 버튼으로 올리지 않는다.
+          <BottomCtaBar
+            secondaryLabel={`삭제 (${selected.length})`}
+            secondaryDestructive
+            onSecondary={() => {
+              deleteItems(selected);
+              setSelected([]);
+            }}
+            label={`다른 일차로 이동 (${selected.length})`}
+            onPress={() => setMovingTo(true)}
+          />
+        )
       ) : null}
     </View>
   );
@@ -320,26 +305,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  handleIcon: {
-    fontFamily: t.titleMd.fontFamily,
-    fontSize: sizing.iconLg,
-    color: colors.muted,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: rounded.xs,
-    borderWidth: 1.5,
-    borderColor: colors.hairline,
-  },
-  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   order: { ...t.caption, color: colors.muted, width: 16, textAlign: 'center' },
   rowBody: { flexGrow: 1, flexShrink: 1 },
   name: { ...t.titleSm, color: colors.ink },
   nameVisited: { color: colors.mutedSoft },
   visited: { ...t.caption, color: colors.muted },
-  arrow: { ...t.caption, color: colors.ink },
-  arrowOff: { color: colors.hairline },
 
   bar: {
     paddingHorizontal: spacing.gutter,
@@ -348,19 +318,6 @@ const s = StyleSheet.create({
     borderTopColor: colors.hairline,
     backgroundColor: colors.canvas,
   },
-  barButtons: { flexDirection: 'row', gap: spacing.xs },
-  btn: {
-    flexGrow: 1,
-    flexBasis: 0,
-    minHeight: sizing.controlH,
-    borderRadius: rounded.md,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnLabel: { ...t.button, color: colors.ink },
-  btnDanger: { color: colors.error },
 
   dayPicker: { gap: spacing.xs },
   pickerLabel: { ...t.caption, color: colors.muted },

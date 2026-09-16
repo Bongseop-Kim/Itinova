@@ -77,7 +77,8 @@ export const type = {
   // as const 대신 satisfies — as const 는 fontVariant 를 readonly 로 만들어 TextStyle 할당이 깨진다.
 } satisfies Record<string, TextStyle>;
 
-export const rounded = { xs: 6, sm: 8, md: 12, lg: 16, xl: 24, sheet: 24, pill: 9999, full: 9999 } as const;
+// 템플릿(Designbase) 스케일 8/12/20/24. sm 은 xs 의 별칭 — 두 스케일을 함께 두지 않는다 (플랜 12 § 1).
+export const rounded = { xs: 8, sm: 8, md: 12, lg: 20, xl: 24, sheet: 24, pill: 9999, full: 9999 } as const;
 
 export const spacing = {
   xxs: 4, xs: 8, sm: 12, md: 16, lg: 24, xl: 32, xxl: 48,
@@ -89,6 +90,7 @@ export const sizing = {
   touchMin: 44,
   controlH: 48,
   controlHSm: 36,
+  controlHMd: 40, // 아이콘 버튼·검색바 (템플릿 sizing/m)
   tabBarH: 56,
   headerH: 56,
   iconSm: 16, iconMd: 20, iconLg: 24,
@@ -114,11 +116,25 @@ export const motion = {
   },
 } as const;
 
+// 시맨틱 계층 — 템플릿의 text/icon/button 상태 이름을 기존 토큰 별칭으로 얹는다. 새 hex 없음 (플랜 12 § 1).
+export const semantic = {
+  text: { primary: colors.ink, secondary: colors.body, tertiary: colors.muted, disabled: colors.mutedSoft, inverse: colors.onDark, link: colors.ink },
+  icon: { primary: colors.ink, secondary: colors.muted, disabled: colors.mutedSoft, inverse: colors.onPrimary },
+  button: {
+    primary: { bg: colors.primary, bgPressed: colors.primaryActive, text: colors.onPrimary },
+    secondary: { bg: colors.surfaceCard, bgPressed: colors.surfaceStrong, text: colors.ink },
+    tertiary: { bg: colors.canvas, bgPressed: colors.surfaceSoft, text: colors.ink, border: colors.hairline },
+    disabled: { bg: colors.primaryDisabled, text: colors.muted },
+  },
+} as const;
+
 // 태블릿은 컬럼을 늘리지 않고 콘텐츠 최대 폭만 잡는다.
 export const layout = { contentMaxWidth: 560 } as const;
 
 export const mapStyle = {
   collapsedHeight: 160, expandedHeight: 320,
-  pinSize: 28, selectedPinSize: 34, pinBorderWidth: 2,
+  // S15 장소 추가 — 핀을 고를 만큼 크고 아래 목록이 절반은 남는 높이 (플랜 12)
+  pickerHeight: 240,
+  pinSize: 36, selectedPinSize: 42, pinBorderWidth: 2, // 템플릿 NumberedPin 36dp (플랜 12)
   routeWidth: 2, lineDashPattern: [4, 6] as const,
 } as const;

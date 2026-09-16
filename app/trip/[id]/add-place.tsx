@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import PlaceMap from '../../../components/PlaceMap';
 import AppleSearchBar from '../../../components/AppleSearchBar';
@@ -10,7 +10,7 @@ import { appleCategory, type ApplePlace } from '../../../lib/applePlaces';
 import { db } from '../../../db';
 import type { LatLng } from '../../../lib/geo';
 import { validCoord } from '../../../lib/map';
-import { BottomCtaBar, Chip, ScreenHeader, SegmentTabs } from '../../../components/ui';
+import { BottomCtaBar, Checkbox, Chip, ChipRow, ListRow, ScreenHeader, Tabs, TextField } from '../../../components/ui';
 import { addPlacesToDay, createCustomPlace, storeApplePlace, savePlaces, savedPlacesQuery } from '../../../db/places';
 import { places as placesTable, savedPlaces, trips } from '../../../db/schema';
 import { CATEGORY_LABEL, categoryLabel, type Category } from '../../../lib/category';
@@ -71,18 +71,24 @@ export default function AddPlace() {
           onPinPress={source === '장소 검색' ? (key) => { const p = search.results.find((p) => p.applePlaceId === key); if (p) toggleApple(p); } : source === '최근 저장' ? toggle : undefined}
           onPick={source === '나만의 장소' ? setCoord : undefined}
         />
+        {source === '장소 검색' ? (
+          // 템플릿 "지도-추천": 지도 위 흰 검색바
+          <View style={s.mapSearch} pointerEvents="box-none">
+            <AppleSearchBar search={search} placeholder={`${trip?.cityName ?? '여행지'} 장소 검색`} elevated />
+          </View>
+        ) : null}
       </View>
-      <SegmentTabs options={SOURCES} value={source} onChange={setSource} />
+      <Tabs options={SOURCES} value={source} onChange={setSource} />
 
       {source === '장소 검색' ? (
         <>
-          <AppleSearchBar search={search} placeholder={`${trip?.cityName ?? '여행지'} 장소 검색`} />
-          {!!picked.length && <View>
-            <ScrollView horizontal contentContainerStyle={s.picked} showsHorizontalScrollIndicator={false}>
-              {picked.map((p) => <Chip key={p.applePlaceId} label={`${p.name} · 해제`} selected onPress={() => toggleApple(p)} />)}
+          {!!picked.length && (
+            <ScrollView horizontal contentContainerStyle={s.picked} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              {picked.map((p) => <Chip key={p.applePlaceId} label={p.name} selected onPress={() => toggleApple(p)} onDismiss={() => toggleApple(p)} />)}
             </ScrollView>
-          </View>}
+          )}
           <FlatList
+            style={s.flex}
             data={search.results}
             keyExtractor={(p) => p.applePlaceId}
             contentContainerStyle={s.list}
@@ -92,19 +98,20 @@ export default function AddPlace() {
             </Text> : null}
             renderItem={({ item }) => {
               const checked = picked.some((p) => p.applePlaceId === item.applePlaceId);
-              return <Pressable onPress={() => toggleApple(item)} style={s.row}
-                accessibilityRole="checkbox" accessibilityState={{ checked }}>
-                <View style={s.rowBody}>
-                  <Text style={s.rowTitle}>{item.name}</Text>
-                  <Text style={s.rowMeta}>{categoryLabel(appleCategory(item.poiCategory))} · {item.address}</Text>
-                </View>
-                <Text style={[s.pick, checked && s.pickOn]}>{checked ? '선택됨' : '선택'}</Text>
-              </Pressable>;
+              return (
+                <ListRow
+                  title={item.name}
+                  subtitle={`${categoryLabel(appleCategory(item.poiCategory))} · ${item.address}`}
+                  leading={<Checkbox checked={checked} label={`${item.name} 선택`} onPress={() => toggleApple(item)} />}
+                  onPress={() => toggleApple(item)}
+                />
+              );
             }}
           />
         </>
       ) : source === '최근 저장' ? (
         <FlatList
+          style={s.flex}
           data={saved ?? []}
           keyExtractor={(p) => p.placeId}
           contentContainerStyle={s.list}
@@ -116,22 +123,12 @@ export default function AddPlace() {
             </View>
           }
           renderItem={({ item }) => (
-            <Pressable
+            <ListRow
+              title={item.name}
+              subtitle={[categoryLabel(item.category), item.region].filter(Boolean).join(' · ')}
+              leading={<Checkbox checked={selected.includes(item.placeId)} label={`${item.name} 선택`} onPress={() => toggle(item.placeId)} />}
               onPress={() => toggle(item.placeId)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: selected.includes(item.placeId) }}
-              style={s.row}
-            >
-              <View style={s.rowBody}>
-                <Text style={s.rowTitle}>{item.name}</Text>
-                <Text style={s.rowMeta}>
-                  {[categoryLabel(item.category), item.region].filter(Boolean).join(' · ')}
-                </Text>
-              </View>
-              <Text style={[s.pick, selected.includes(item.placeId) && s.pickOn]}>
-                {selected.includes(item.placeId) ? '선택됨' : '선택'}
-              </Text>
-            </Pressable>
+            />
           )}
         />
       ) : (
@@ -177,35 +174,15 @@ function CustomPlaceForm({ onCreate, coord, onClearCoord }: { onCreate: (placeId
   return (
     <ScrollView contentContainerStyle={s.form} keyboardShouldPersistTaps="handled">
       <Text style={s.rowMeta}>{coord ? `선택한 위치: ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}` : '위 지도를 눌러 장소의 위치를 선택해 주세요 (선택)'}</Text>
-      {coord && <Pressable style={s.add} onPress={onClearCoord} accessibilityRole="button"><Text style={s.addLabel}>위치 선택 해제</Text></Pressable>}
-      <TextInput
-        style={s.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="장소 이름"
-        placeholderTextColor={colors.mutedSoft}
-        returnKeyType="done"
-        onSubmitEditing={submit}
-      />
-      <TextInput
-        style={s.input}
-        value={region}
-        onChangeText={setRegion}
-        placeholder="지역 (선택)"
-        placeholderTextColor={colors.mutedSoft}
-        returnKeyType="done"
-        onSubmitEditing={submit}
-      />
-      <View style={s.chips}>
+      {coord && <Chip label="위치 선택 해제" leadingIcon="location" onPress={onClearCoord} onDismiss={onClearCoord} />}
+      <TextField label="장소 이름" value={name} onChangeText={setName} placeholder="장소 이름" returnKeyType="done" onSubmitEditing={submit} />
+      <TextField label="지역 (선택)" value={region} onChangeText={setRegion} placeholder="지역" returnKeyType="done" onSubmitEditing={submit} />
+      <Text style={s.label}>카테고리</Text>
+      <ChipRow>
         {CATEGORIES.map((c) => (
-          <Chip
-            key={c}
-            label={CATEGORY_LABEL[c]}
-            selected={category === c}
-            onPress={() => setCategory(c)}
-          />
+          <Chip key={c} label={CATEGORY_LABEL[c]} leadingIcon={`cat-${c}`} selected={category === c} onPress={() => setCategory(c)} />
         ))}
-      </View>
+      </ChipRow>
       <Pressable
         onPress={submit}
         disabled={!name.trim()}
@@ -219,36 +196,17 @@ function CustomPlaceForm({ onCreate, coord, onClearCoord }: { onCreate: (placeId
 }
 
 const s = StyleSheet.create({
-  map: { height: mapStyle.collapsedHeight, marginHorizontal: spacing.gutter, borderRadius: rounded.lg, overflow: 'hidden', marginBottom: spacing.sm },
+  map: { height: mapStyle.pickerHeight, marginHorizontal: spacing.gutter, borderRadius: rounded.lg, overflow: 'hidden', marginBottom: spacing.sm },
+  mapSearch: { position: 'absolute', top: spacing.xs, left: -spacing.gutter + spacing.xs, right: -spacing.gutter + spacing.xs },
   screen: { flex: 1, backgroundColor: colors.canvas },
+  flex: { flex: 1 },
 
-  list: { paddingHorizontal: spacing.gutter, paddingTop: spacing.sm, paddingBottom: spacing.lg },
-  picked: { paddingHorizontal: spacing.gutter, gap: spacing.xs, paddingBottom: spacing.xs },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: sizing.touchMin,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: sizing.hairline,
-    borderBottomColor: colors.hairlineSoft,
-  },
-  rowBody: { flexGrow: 1, flexShrink: 1 },
-  rowTitle: { ...t.titleSm, color: colors.ink },
+  list: { paddingTop: spacing.xs, paddingBottom: spacing.lg },
+  picked: { paddingHorizontal: spacing.gutter, gap: spacing.xs, paddingVertical: spacing.xs },
   rowMeta: { ...t.caption, color: colors.muted },
-  pick: {
-    ...t.caption,
-    color: colors.muted,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    borderRadius: rounded.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xxs,
-    overflow: 'hidden',
-  },
-  pickOn: { backgroundColor: colors.primary, borderColor: colors.primary, color: colors.onPrimary },
+  label: { ...t.caption, color: colors.muted },
 
-  empty: { alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingTop: spacing.xxl },
+  empty: { alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingTop: spacing.xxl, paddingHorizontal: spacing.gutter },
   emptyFigure: {
     width: 160,
     height: 160,
@@ -257,20 +215,9 @@ const s = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   emptyTitle: { ...t.titleMd, color: colors.ink },
-  emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center' },
+  emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center', paddingHorizontal: spacing.gutter },
 
   form: { flexGrow: 1, paddingHorizontal: spacing.gutter, paddingTop: spacing.md, gap: spacing.sm },
-  input: {
-    ...t.bodyMd,
-    color: colors.ink,
-    minHeight: sizing.controlH,
-    borderRadius: rounded.md,
-    borderWidth: sizing.hairline,
-    borderColor: colors.hairline,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.canvas,
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   add: {
     minHeight: sizing.controlH,
     borderRadius: rounded.md,

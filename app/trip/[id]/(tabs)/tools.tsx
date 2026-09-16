@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Chip, ScreenHeader } from '../../../../components/ui';
+import { Chip, Icon, ScreenHeader, type IconName } from '../../../../components/ui';
 import { db } from '../../../../db';
 import { trips } from '../../../../db/schema';
 import { cityTimeZone } from '../../../../lib/cities';
@@ -19,7 +19,7 @@ const open = (url: string) => Linking.openURL(url).catch(() => Alert.alert('열 
 export default function Tools() {
   const id = useTripId();
   const trip = useDbQuery(() => db.select().from(trips).where(eq(trips.id, id)), [trips], [id])?.[0];
-  return <View style={s.screen}><ScreenHeader title="여행 도구" />{trip ? <TravelTools key={trip.id + trip.currency} trip={trip} /> : <Text style={s.body}>여행을 찾을 수 없어요.</Text>}</View>;
+  return <View style={s.screen}><ScreenHeader title="여행 도구" back={false} />{trip ? <TravelTools key={trip.id + trip.currency} trip={trip} /> : <Text style={s.body}>여행을 찾을 수 없어요.</Text>}</View>;
 }
 function TravelTools({ trip }: { trip: typeof trips.$inferSelect }) {
   const weather = useTripWeather(trip);
@@ -38,7 +38,7 @@ function TravelTools({ trip }: { trip: typeof trips.$inferSelect }) {
   return (
     <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
       <View style={s.section}>
-        <View style={s.heading}><Text style={s.title}>{trip.cityName} 날씨</Text><Action label="새로고침" onPress={weather.refresh} /></View>
+        <View style={s.heading}><Icon name="sun" /><Text style={s.title}>{trip.cityName} 날씨</Text><Action label="새로고침" onPress={weather.refresh} /></View>
         <Text style={s.body}>{trip.startDate} ~ {trip.endDate} · 현지 날짜 기준</Text>
         {weather.loading && <LoadingRows label="예보를 불러오고 있어요" />}
         {weather.error && <Text style={s.body} accessibilityRole="alert">{weather.error}</Text>}
@@ -49,12 +49,12 @@ function TravelTools({ trip }: { trip: typeof trips.$inferSelect }) {
         <Action label="날씨 출처: Open-Meteo" onPress={() => open('https://open-meteo.com/')} />
       </View>
       <View style={s.section}>
-        <Text style={s.title}>시차</Text>
+        <View style={s.heading}><Icon name="world-clock" /><Text style={s.title}>시차</Text></View>
         <Text style={s.number}>한국 · {zonedDateTime(now, 'Asia/Seoul')}</Text>
         {timezone ? <><Text style={s.number}>{trip.cityName} · {zonedDateTime(now, timezone)}</Text><Text style={s.body}>{timeDifference(now, timezone)}</Text><Text style={s.caption}>현재 시차 · 서머타임 반영</Text></> : <Text style={s.body}>현지 시간대를 확인할 수 없어요. 날씨를 새로고침해 주세요.</Text>}
       </View>
       <View style={s.section}>
-        <View style={s.heading}><Text style={s.title}>환율 계산</Text><Action label="새로고침" onPress={fx.refresh} /></View>
+        <View style={s.heading}><Icon name="exchange" /><Text style={s.title}>환율 계산</Text><Action label="새로고침" onPress={fx.refresh} /></View>
         <Text style={s.body}>보낼 통화</Text><CurrencyChips currencies={currencies} value={base} onChange={setBase} />
         <TextInput style={s.input} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" accessibilityLabel={`${base} 환산할 금액`} placeholder="금액" placeholderTextColor={colors.mutedSoft} maxLength={16} />
         <Action label="통화 방향 바꾸기" onPress={() => { setBase(quote); setQuote(base); }} />
@@ -67,7 +67,7 @@ function TravelTools({ trip }: { trip: typeof trips.$inferSelect }) {
         <Action label="환율 출처: Frankfurter" onPress={() => open('https://frankfurter.dev/')} />
       </View>
       <View style={s.section}>
-        <Text style={s.title}>번역</Text>
+        <View style={s.heading}><Icon name="translate" /><Text style={s.title}>번역</Text></View>
         <TextInput style={s.input} value={text} onChangeText={setText} multiline accessibilityLabel="번역할 문장" placeholder="번역할 문장을 입력해 주세요" placeholderTextColor={colors.mutedSoft} maxLength={2000} />
         <View style={s.chips}>{LANGUAGES.map((lang) => <Chip key={lang.code} label={lang.name} selected={language === lang.code} onPress={() => setLanguage(lang.code)} />)}</View>
         <Pressable style={s.action} accessibilityRole="button" disabled={!text.trim()} accessibilityState={{ disabled: !text.trim() }} onPress={() => open(`https://translate.google.com/?sl=auto&tl=${language}&text=${encodeURIComponent(text.trim())}&op=translate`)}><Text style={[s.button, !text.trim() && s.disabled]}>Google 번역에서 열기</Text></Pressable>

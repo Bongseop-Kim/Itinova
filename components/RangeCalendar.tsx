@@ -1,14 +1,18 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { cellState, months, pickDate, todayISO, type Cell, type Month } from '../lib/calendar';
-import { colors, rounded, sizing, spacing, type as t } from '../theme';
+import { colors, sizing, spacing, type as t } from '../theme';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+const CIRCLE = 36;
 
 export type Range = { start?: string; end?: string };
 export const CALENDAR_MONTHS = 6;
 
-/** S05 여행 생성과 S21 날짜 변경이 함께 쓴다. */
+/**
+ * S05 여행 생성과 S21 날짜 변경이 함께 쓴다.
+ * 템플릿 Date Picker: 범위는 연속 밴드(양끝 둥글게), 시작·끝은 잉크 원 + 흰 숫자, 오늘은 숫자 위 점.
+ */
 export default function RangeCalendar({
   range,
   onChange,
@@ -87,6 +91,7 @@ function DayCell({
   const past = cell.date < today;
   const state = cellState(range, cell.date);
   const filled = state === 'start' || state === 'end' || state === 'single';
+  const banded = state === 'middle' || state === 'start' || state === 'end';
 
   return (
     <Pressable
@@ -94,17 +99,14 @@ function DayCell({
       onPress={() => onPick(cell.date)}
       accessibilityRole="button"
       accessibilityState={{ disabled: past, selected: state !== 'none' }}
-      style={[s.cell, state === 'middle' && s.cellMiddle, filled && s.cellFilled]}
+      style={s.cell}
     >
-      <Text
-        style={[
-          s.cellLabel,
-          past && s.cellLabelPast,
-          filled && s.cellLabelFilled,
-        ]}
-      >
-        {cell.day}
-      </Text>
+      {/* 밴드: 셀 절반씩 칠해 시작·끝에서 둥글게 끊긴다 */}
+      {banded ? <View style={[s.band, state === 'start' && s.bandStart, state === 'end' && s.bandEnd]} /> : null}
+      <View style={[s.circle, filled && s.circleFilled]}>
+        <Text style={[s.cellLabel, past && s.cellLabelPast, filled && s.cellLabelFilled]}>{cell.day}</Text>
+      </View>
+      {cell.date === today ? <View style={[s.todayDot, filled && s.todayDotFilled]} /> : null}
     </Pressable>
   );
 }
@@ -132,9 +134,21 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cellMiddle: { backgroundColor: colors.surfaceCard },
-  cellFilled: { backgroundColor: colors.primary, borderRadius: rounded.sm },
+  band: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: (sizing.touchMin - CIRCLE) / 2,
+    height: CIRCLE,
+    backgroundColor: colors.surfaceCard,
+  },
+  bandStart: { left: '50%' },
+  bandEnd: { right: '50%' },
+  circle: { width: CIRCLE, height: CIRCLE, borderRadius: CIRCLE / 2, alignItems: 'center', justifyContent: 'center' },
+  circleFilled: { backgroundColor: colors.primary },
   cellLabel: { ...t.bodySm, color: colors.ink },
   cellLabelPast: { color: colors.mutedSoft },
   cellLabelFilled: { color: colors.onPrimary },
+  todayDot: { position: 'absolute', top: 1, width: 4, height: 4, borderRadius: 2, backgroundColor: colors.ink },
+  todayDotFilled: { backgroundColor: colors.onPrimary, top: (sizing.touchMin - CIRCLE) / 2 + 4 },
 });
