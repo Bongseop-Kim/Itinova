@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ClayFigure } from '../components/ClayFigure';
 import { BottomCtaBar } from '../components/ui';
 import { ONBOARDED, setSetting } from '../db/settings';
-import { colors, rounded, spacing, type as t } from '../theme';
+import { colors, illustration, rounded, spacing, type as t } from '../theme';
 
 const STEPS = 2;
 
@@ -47,8 +48,7 @@ function ValueProp() {
     <>
       <Text style={s.title}>여행 하나를,{'\n'}처음부터 끝까지</Text>
       <Text style={s.body}>계획하고, 다니면서 쓰고, 끝나면 정리까지</Text>
-      {/* 클레이 일러스트 자리 (design-system §자산 로드맵 4번) */}
-      <View style={s.figure} />
+      <View style={s.hero}><ClayFigure name="hero" size={illustration.hero} /></View>
       <View style={s.points}>
         <Point title="일차별 일정 보드" body="장소를 담으면 사이 거리가 바로 보입니다" />
         <Point title="가계부 · 체크리스트" body="여행 하나에 필요한 것들이 같이 붙어 있어요" />
@@ -73,7 +73,6 @@ function LocalDataNotice() {
       <Text style={s.body}>
         여행 설정의 <Text style={s.bodyStrong}>JSON 내보내기</Text>로 백업할 수 있어요.
       </Text>
-      <View style={s.figure} />
     </>
   );
 }
@@ -99,12 +98,7 @@ const s = StyleSheet.create({
   body: { ...t.bodyMd, color: colors.muted },
   bodyStrong: { ...t.bodyMd, color: colors.ink },
 
-  figure: {
-    height: 160,
-    borderRadius: rounded.xl,
-    backgroundColor: colors.surfaceCard,
-    marginTop: spacing.xs,
-  },
+  hero: { alignItems: 'center', marginTop: spacing.xs },
 
   points: { gap: spacing.md, paddingTop: spacing.xs },
   point: { gap: 2 },

@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ClayFigure, categoryFigure } from '../../components/ClayFigure';
 import DayPickerSheet from '../../components/DayPickerSheet';
 import PlaceMap from '../../components/PlaceMap';
 import { Badge, Chip, ChipRow, Icon, ListRow, ScreenHeader, SectionHeader, type IconName } from '../../components/ui';
@@ -13,7 +14,7 @@ import { categoryLabel } from '../../lib/category';
 import type { LatLng } from '../../lib/geo';
 import { directionsUrl, validCoord } from '../../lib/map';
 import { useDbQuery } from '../../lib/useDbQuery';
-import { colors, mapStyle, rounded, spacing, type as t } from '../../theme';
+import { colors, illustration, mapStyle, rounded, spacing, type as t } from '../../theme';
 
 // S20 장소 상세. 템플릿 "지도-상세페이지": 헤더 이미지 → 이름+카테고리 → 아이콘 액션 4열 → 정보 행 → 지도.
 export default function PlaceDetail() {
@@ -36,8 +37,7 @@ export default function PlaceDetail() {
         {place.photoUrl ? (
           <Image source={{ uri: place.photoUrl }} style={s.photo} accessibilityLabel={`${place.name} 사진`} />
         ) : (
-          // 사진이 없는 게 기본이다 (Apple 검색). 플랜 11의 카테고리 클레이가 이 자리에 온다.
-          <View style={s.figure}><Icon name={`cat-${place.category ?? 'etc'}` as IconName} size={48} color={colors.muted} /></View>
+          <View style={s.clayHeader}><ClayFigure name={categoryFigure(place.category)} size={illustration.large} /></View>
         )}
         <View style={[s.gutter, s.head]}>
           <Text style={s.title}>{place.name}</Text>
@@ -94,7 +94,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.canvas }, content: { paddingBottom: spacing.xxl },
   gutter: { paddingHorizontal: spacing.gutter },
   photo: { height: mapStyle.collapsedHeight, marginHorizontal: spacing.gutter, borderRadius: rounded.lg },
-  figure: { height: mapStyle.collapsedHeight, marginHorizontal: spacing.gutter, borderRadius: rounded.lg, backgroundColor: colors.surfaceCard, alignItems: 'center', justifyContent: 'center' },
+  clayHeader: { alignItems: 'center' },
   head: { paddingTop: spacing.md, gap: spacing.xs },
   title: { ...t.displayMd, color: colors.ink },
   meta: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs },

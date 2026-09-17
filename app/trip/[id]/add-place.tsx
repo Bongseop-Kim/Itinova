@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ClayFigure } from '../../../components/ClayFigure';
 import PlaceMap from '../../../components/PlaceMap';
 import AppleSearchBar from '../../../components/AppleSearchBar';
 import { useAppleSearch } from '../../../lib/useAppleSearch';
@@ -16,7 +17,7 @@ import { places as placesTable, savedPlaces, trips } from '../../../db/schema';
 import { CATEGORY_LABEL, categoryLabel, type Category } from '../../../lib/category';
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { useTripId } from '../../../lib/useTripId';
-import { colors, mapStyle, rounded, sizing, spacing, type as t } from '../../../theme';
+import { colors, illustration, mapStyle, rounded, sizing, spacing, type as t } from '../../../theme';
 
 const SOURCES = ['장소 검색', '최근 저장', '나만의 장소'] as const;
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[];
@@ -117,7 +118,7 @@ export default function AddPlace() {
           contentContainerStyle={s.list}
           ListEmptyComponent={
             <View style={s.empty}>
-              <View style={s.emptyFigure} />
+              <ClayFigure name="saved" size={illustration.large} />
               <Text style={s.emptyTitle}>저장한 장소가 없어요</Text>
               <Text style={s.emptyBody}>나만의 장소 탭에서 직접 추가할 수 있어요</Text>
             </View>
@@ -207,13 +208,6 @@ const s = StyleSheet.create({
   label: { ...t.caption, color: colors.muted },
 
   empty: { alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingTop: spacing.xxl, paddingHorizontal: spacing.gutter },
-  emptyFigure: {
-    width: 160,
-    height: 160,
-    borderRadius: rounded.xl,
-    backgroundColor: colors.surfaceCard,
-    marginBottom: spacing.xs,
-  },
   emptyTitle: { ...t.titleMd, color: colors.ink },
   emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center', paddingHorizontal: spacing.gutter },
 

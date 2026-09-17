@@ -3,6 +3,7 @@ import { Link, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
+import { ClayFigure, categoryFigure } from '../../../../components/ClayFigure';
 import PlaceMap from '../../../../components/PlaceMap';
 import PlaceQuickActions from '../../../../components/PlaceQuickActions';
 import { useTripWeather } from '../../../../lib/useTravelData';
@@ -17,7 +18,7 @@ import { dayMeta } from '../../../../lib/date';
 import { formatKm, haversineKm } from '../../../../lib/geo';
 import { groupByDay, type DaySection, type Item } from '../../../../lib/itinerary';
 import { useDbQuery } from '../../../../lib/useDbQuery';
-import { colors, mapStyle, rounded, sizing, spacing, type as t } from '../../../../theme';
+import { colors, illustration, mapStyle, rounded, sizing, spacing, type as t } from '../../../../theme';
 import { useTripId } from '../../../../lib/useTripId';
 
 export default function Itinerary() {
@@ -144,7 +145,7 @@ function ItineraryCard({ item, order, onPress }: { item: Item; order: number; on
           {order}
         </Text>
       </View>
-      <View style={s.thumb} />
+      <ClayFigure name={categoryFigure(item.category)} size={illustration.thumb} />
       <View style={s.cardBody}>
         <Text style={s.cardTitle} numberOfLines={1}>
           {item.name}
@@ -215,7 +216,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeLabel: { ...t.caption, color: colors.onPrimary },
-  thumb: { width: 44, height: 44, borderRadius: rounded.md, backgroundColor: colors.surfaceCard },
   cardBody: { flexGrow: 1, flexShrink: 1 },
   cardTitle: { ...t.titleSm, color: colors.ink },
   cardMeta: { ...t.caption, color: colors.muted },

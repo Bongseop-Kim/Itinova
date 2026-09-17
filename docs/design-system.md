@@ -340,6 +340,7 @@ components:
   empty-state:
     # 일러스트 자리를 항상 확보한다 (§ 자산 로드맵)
     illustrationSize: 160
+    illustration: { hero: 240, large: 160, row: 56, section: 48, thumb: 44 }
     titleTypography: "{typography.title-md}"
     bodyTypography: "{typography.body-sm}"
     bodyColor: "{colors.muted}"
@@ -810,18 +811,22 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 
 ## 자산 로드맵
 
-3D 클레이메이션 일러스트는 이 시스템의 브랜드 전압이다. 지금은 하나도 없다. **자산 자리를 미리 확보한 채로 만들고, 확보되는 대로 채워 넣는다.**
+3D 클레이 일러스트 15종과 앱 마크 1종을 확보했다. 목록·프롬프트·재생성 정보는 `assets/clay/README.md`에 있다.
 
-우선순위:
+- 대형: hero · saved · budget
+- 카테고리: attraction · food · cafe · stay · transport · etc
+- 생성 방식: manual · ai
+- 도구: weather · time · fx · translate
+- 앱 마크: 코랄 핀 + 크림 경로. 2026-09-16 사용자 승인 후 앱 아이콘·스플래시·Android foreground에 반영했다.
 
-1. **빈 상태 4종** (`{components.empty-state}`, 160dp) — 저장함 / 체크리스트 / 가계부 / 지도 장소 없음. 사용자가 가장 먼저 마주치고, 일러스트 없이는 가장 허전한 화면이다.
-2. **홈 히어로** (S01) — 여행이 없을 때의 첫 화면. 앱의 첫인상.
-3. **AI 생성 대기** (S07→S08) — 대기 시간이 있는 유일한 지점. 움직이는 클레이 캐릭터가 체감 시간을 줄인다.
-4. **온보딩 / 여행 생성 완료** — 있으면 좋고 없어도 된다.
+**스타일 계약:** 무광 클레이와 미세한 손자국, 인물 없이 소품만 사용한다. 좌상단 부드러운 조명과 살짝 위에서 본 3/4 시점을 맞춘다. peach · ochre · mint · lavender 중심에 coral 포인트, 크림은 밝은 면에만 쓴다. 배경은 투명이다.
+대형은 소품 2~3개 장면, 소형은 한 소품 한 실루엣이고 접지 그림자를 넣지 않는다. 크기는 `components.empty-state.illustration`과 `theme.ts`의 `illustration` 토큰을 따른다. 32dp 이하 아이콘과 여행 카드에는 클레이를 넣지 않는다.
 
-확보 전까지: 해당 자리를 **비워두거나** `{colors.surface-card}` 크림 면 + 단색 아이콘으로 채운다. **플랫 벡터 일러스트나 스톡 이미지로 대체하지 않는다** — 나중에 클레이 자산이 들어올 때 두 양식이 섞여 시스템이 무너진다. 빈 자리가 잘못된 자리보다 낫다.
+생성: 대형/카테고리 1536px · 소형 1024px 요청 → 내장 도구 실제 출력 1254px (모델 지정 불가, 사용자 승인).
+축소: ImageMagick 선형 광(`RGB → resize → sRGB`)으로 표시 dp의 3배까지 줄인다.
+배포: WebP q90/alpha100, 앱 마크는 PNG. 원본은 git에 넣지 않는다.
 
-일러스트 제작 시 팔레트는 `{colors.brand-peach}` · `{colors.brand-ochre}` · `{colors.brand-lavender}` · `{colors.brand-mint}`를 축으로 잡고, 배경은 항상 투명(크림 캔버스 위에 얹힌다).
+남은 자산: **AI 생성 대기**(S07→S08) 움직이는 클레이 캐릭터. 해당 화면 구현 후 별도 제작한다.
 
 ## Do / Don't
 
@@ -850,7 +855,6 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 
 ## 미결 항목
 
-- **3D 클레이 자산 0개.** § 자산 로드맵 우선순위대로 확보한다.
 - **지도 스타일 미정.** `react-native-maps` 커스텀 스타일로 크림 톤을 맞출지, 기본 타일을 쓸지.
 - **접근성 부분 검증.** 대비비는 실측했다(§ 대비). 터치 영역·스크린리더 라벨·Dynamic Type 실기기 확인은 남았다. 아이콘 버튼은 라벨이 유일한 설명이라 VoiceOver 확인이 특히 중요하다.
 

@@ -1,5 +1,6 @@
 // S10 의 유일한 비자명 로직: leftJoin 결과를 일차별로 묶는다.
 // 장소가 없는 일차도 행 하나로 돌아오므로(itemId = null) 그 행은 섹션만 만들고 항목은 만들지 않는다.
+import type { Category } from './category';
 import type { LatLng } from './geo';
 
 export type JoinedRow = {
@@ -10,7 +11,7 @@ export type JoinedRow = {
   startTime: string | null;
   visited: boolean | null;
   name: string | null;
-  category: string | null;
+  category: Category | null;
   region: string | null;
   lat: number | null;
   lng: number | null;
@@ -19,7 +20,7 @@ export type JoinedRow = {
 export type Item = {
   id: string;
   name: string;
-  category: string | null;
+  category: Category | null;
   region: string | null;
   startTime: string | null;
   visited: boolean;

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
+import { ClayFigure } from '../../../components/ClayFigure';
 import { BottomCtaBar, ScreenHeader, SectionHeader, SegmentedControl } from '../../../components/ui';
 import { expensesQuery, removeExpense } from '../../../db/expenses';
 import { appSettings, expenses as expensesTable, tripDays } from '../../../db/schema';
@@ -10,7 +11,7 @@ import { formatAmount, groupByCategory, groupByDay, sumByCurrency, type Expense 
 import { useDbQuery } from '../../../lib/useDbQuery';
 import { dayMeta } from '../../../lib/date';
 import { useTripId } from '../../../lib/useTripId';
-import { colors, rounded, sizing, spacing, type as t } from '../../../theme';
+import { colors, illustration, sizing, spacing, type as t } from '../../../theme';
 
 const MODES = ['일차별', '카테고리별'] as const;
 
@@ -60,9 +61,8 @@ export default function Budget() {
         contentContainerStyle={s.list}
         stickySectionHeadersEnabled={false}
         ListEmptyComponent={
-          // E04 — 일러스트 자리를 확보해 둔다
           <View style={s.empty}>
-            <View style={s.emptyFigure} />
+            <ClayFigure name="budget" size={illustration.large} />
             <Text style={s.emptyTitle}>기록한 비용이 없어요</Text>
             <Text style={s.emptyBody}>
               결제할 때마다 넣어두면{'\n'}일차별 · 카테고리별로 알아서 묶입니다
@@ -121,13 +121,6 @@ const s = StyleSheet.create({
   amount: { ...t.numeric, color: colors.ink },
 
   empty: { alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xxl, paddingHorizontal: spacing.gutter },
-  emptyFigure: {
-    width: 160,
-    height: 160,
-    borderRadius: rounded.xl,
-    backgroundColor: colors.surfaceCard,
-    marginBottom: spacing.xs,
-  },
   emptyTitle: { ...t.titleMd, color: colors.ink },
   emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center' },
 });

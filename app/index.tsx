@@ -3,6 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
+import { ClayFigure } from '../components/ClayFigure';
 import { Badge, BottomCtaBar, ScreenHeader, SectionHeader, Tabs } from '../components/ui';
 import { db } from '../db';
 import { appSettings, trips } from '../db/schema';
@@ -10,7 +11,7 @@ import { DATE_FORMAT, ONBOARDED, settingsQuery } from '../db/settings';
 import { todayISO, tripLength } from '../lib/calendar';
 import { dateRangeLabel, dayMeta, ddayLabel, tripBucket, type Bucket, type DateFormat } from '../lib/date';
 import { useDbQuery } from '../lib/useDbQuery';
-import { colors, elevation, rounded, spacing, type as t } from '../theme';
+import { colors, illustration, elevation, rounded, spacing, type as t } from '../theme';
 
 type Trip = { id: string; title: string; startDate: string; endDate: string; cityName: string };
 const TABS = ['다가오는', '지난'] as const;
@@ -77,9 +78,8 @@ export default function Home() {
       />
 
       {empty ? (
-        // E01 — 일러스트 자리를 확보해 둔다 (design-system §자산 로드맵 2번)
         <View style={s.empty}>
-          <View style={s.emptyFigure} />
+          <ClayFigure name="hero" size={illustration.hero} />
           <Text style={s.emptyTitle}>아직 여행이 없어요</Text>
           <Text style={s.emptyBody}>
             도시와 날짜만 정하면{'\n'}일차별 일정이 바로 만들어집니다
@@ -210,13 +210,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.gutter,
-  },
-  emptyFigure: {
-    width: 160,
-    height: 160,
-    borderRadius: rounded.xl,
-    backgroundColor: colors.surfaceCard,
-    marginBottom: spacing.xs,
   },
   emptyTitle: { ...t.displayLg, color: colors.ink, textAlign: 'center' },
   emptyBody: { ...t.bodySm, color: colors.muted, textAlign: 'center' },

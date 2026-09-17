@@ -138,3 +138,5 @@ export const mapStyle = {
   pinSize: 36, selectedPinSize: 42, pinBorderWidth: 2, // 템플릿 NumberedPin 36dp (플랜 12)
   routeWidth: 2, lineDashPattern: [4, 6] as const,
 } as const;
+
+export const illustration = { hero: 240, large: 160, row: 56, section: 48, thumb: 44 } as const;
