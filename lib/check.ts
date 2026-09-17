@@ -14,6 +14,7 @@ import { dateChangeWarning, planDateChange, type CurrentDay } from './tripDates.
 import { checklistSections } from '../db/templates.ts';
 import { categoryAppendOrders } from './checklist.ts';
 import { expenseDay, initialExpenseCurrency } from './expense.ts';
+import { CITY_FALLBACKS, cityFallback, citySceneSlug } from './cityScene.ts';
 
 // ponytail: @types/node 를 끌어오지 않기 위한 최소 어서션. 프레임워크 없음.
 const fail = (msg: string): never => {
@@ -141,6 +142,13 @@ eq(tripBucket('2026-09-09', '2026-09-11', '2026-09-12'), 'past');
 eq(ddayLabel('2026-09-09', '2026-09-05'), 'D-4');
 eq(ddayLabel('2026-09-09', '2026-09-09'), 'D-day');
 eq(ddayLabel('2026-09-09', '2026-09-12'), 'D+3', '지난 여행은 D+');
+
+// ── 도시 씬 ──
+eq(citySceneSlug(' 서울특별시 '), 'seoul');
+eq(citySceneSlug('Tokyo'), 'tokyo');
+eq(citySceneSlug('없는도시'), undefined);
+eq(cityFallback('없는도시'), cityFallback('없는도시'), '같은 도시는 같은 폴백 색');
+ok(CITY_FALLBACKS.includes(cityFallback('다낭')), '모르는 도시도 브랜드 폴백 색을 받는다');
 
 // ── 가계부 ──
 const ex = (over: Partial<Expense>): Expense => ({

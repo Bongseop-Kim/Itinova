@@ -1,0 +1,8 @@
+appId: com.bongsub.Itinova
+---
+- launchApp
+- assertVisible: ".*서울 여행.*"
+- tapOn: ".*서울 여행.*"
+- assertVisible: "day 1"
+- tapOn: "홈으로"
+- assertVisible: "다가오는 여행"

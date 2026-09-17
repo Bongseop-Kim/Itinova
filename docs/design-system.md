@@ -269,15 +269,19 @@ components:
     paddingTop: "{spacing.lg}"
     paddingBottom: "{spacing.xs}"
   trip-card:
-    # S01 홈 여행 카드. 이미지 위 잉크 텍스트, 크림 카드가 기본.
-    backgroundColor: "{colors.surface-card}"
-    textColor: "{colors.ink}"
+    # S01 다가오는 여행 가로 씬 카드.
+    textColor: "{colors.on-dark}"
     borderRadius: "{rounded.lg}"
-    padding: "{spacing.md}"
-    elevation: "{elevation.card}"
-    titleTypography: "{typography.title-lg}"
+    size: [156, 196]
+    titleTypography: "{typography.title-md}"
     metaTypography: "{typography.caption}"
-    metaColor: "{colors.muted}"
+    metaColor: rgba(255,255,255,0.78)
+  city-scene:
+    slots:
+      hero: [390, 344]
+      card: [156, 196]
+      thumb: [56, 56]
+    fallbackColors: ["{colors.brand-peach}", "{colors.brand-ochre}", "{colors.brand-mint}", "{colors.brand-lavender}", "{colors.brand-coral}"]
   trip-card-active:
     # 진행중 여행 1건. 채도 카드로 승격해 홈에서 유일하게 튄다.
     backgroundColor: "{colors.brand-teal}"
@@ -811,16 +815,17 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 
 ## 자산 로드맵
 
-3D 클레이 일러스트 15종과 앱 마크 1종을 확보했다. 목록·프롬프트·재생성 정보는 `assets/clay/README.md`에 있다.
+3D 클레이 일러스트 15종, 도시 장면 16종 × 3슬롯, 앱 마크 1종을 확보했다. 목록·프롬프트·재생성 정보는 `assets/clay/README.md`에 있다.
 
 - 대형: hero · saved · budget
 - 카테고리: attraction · food · cafe · stay · transport · etc
 - 생성 방식: manual · ai
 - 도구: weather · time · fx · translate
+- 도시 씬: 서울 · 부산 · 제주 · 강릉 · 여수 · 경주 · 전주 · 속초 · 도쿄 · 오사카 · 후쿠오카 · 타이베이 · 방콕 · 다낭 · 싱가포르 · 파리. hero 390×344 · card 156×196 · thumb 56×56
 - 앱 마크: 코랄 핀 + 크림 경로. 2026-09-16 사용자 승인 후 앱 아이콘·스플래시·Android foreground에 반영했다.
 
-**스타일 계약:** 무광 클레이와 미세한 손자국, 인물 없이 소품만 사용한다. 좌상단 부드러운 조명과 살짝 위에서 본 3/4 시점을 맞춘다. peach · ochre · mint · lavender 중심에 coral 포인트, 크림은 밝은 면에만 쓴다. 배경은 투명이다.
-대형은 소품 2~3개 장면, 소형은 한 소품 한 실루엣이고 접지 그림자를 넣지 않는다. 크기는 `components.empty-state.illustration`과 `theme.ts`의 `illustration` 토큰을 따른다. 32dp 이하 아이콘과 여행 카드에는 클레이를 넣지 않는다.
+**스타일 계약:** 무광 클레이와 미세한 손자국, 인물 없이 소품만 사용한다. 좌상단 부드러운 조명과 살짝 위에서 본 3/4 시점을 맞춘다. peach · ochre · mint · lavender 중심에 coral 포인트, 크림은 밝은 면에만 쓴다. 단일 소품은 투명 배경이고, 도시 씬은 크림 배경과 낮은 바닥 면을 허용한다.
+대형은 소품 2~3개 장면, 소형은 한 소품 한 실루엣이고 접지 그림자를 넣지 않는다. 크기는 `components.empty-state.illustration`과 `theme.ts`의 `illustration` 토큰을 따른다. 32dp 이하 아이콘과 여행 카드의 **소품** 클레이는 넣지 않으며, 도시 **씬**은 예외다.
 
 생성: 대형/카테고리 1536px · 소형 1024px 요청 → 내장 도구 실제 출력 1254px (모델 지정 불가, 사용자 승인).
 축소: ImageMagick 선형 광(`RGB → resize → sRGB`)으로 표시 dp의 3배까지 줄인다.
@@ -837,7 +842,7 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 - 금액·거리·시각은 `tabular-nums`.
 - 리스트는 `FlatList`. 하단 여백에 `insets.bottom`을 더한다.
 - 에러는 색 + 텍스트. 색만으로 상태를 말하지 않는다.
-- 채도 카드 위 텍스트는 `{colors.brand-teal}`만 흰색, 나머지는 전부 잉크 (§ 대비).
+- 단색 채도 카드 위 텍스트는 `{colors.brand-teal}`만 흰색, 나머지는 전부 잉크 (§ 대비). 도시 씬 위 텍스트는 스크림을 깔고 `{colors.on-dark}`를 쓴다.
 - 일러스트 자리는 자산이 없어도 레이아웃에 확보해 둔다.
 
 ### Don't

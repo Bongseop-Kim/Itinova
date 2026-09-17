@@ -23,7 +23,7 @@ export type Expense = {
 };
 
 /** 통화별 합계. 해외 여행은 현지 통화와 원화가 섞인다. */
-export function sumByCurrency(rows: readonly Expense[]): { currency: string; amount: number }[] {
+export function sumByCurrency(rows: readonly Pick<Expense, 'currency' | 'amount'>[]): { currency: string; amount: number }[] {
   const map = new Map<string, number>();
   for (const r of rows) map.set(r.currency, (map.get(r.currency) ?? 0) + r.amount);
   return [...map.entries()]
