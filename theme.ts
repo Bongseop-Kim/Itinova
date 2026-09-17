@@ -143,7 +143,7 @@ export const illustration = {
   hero: 240, large: 160, row: 56, section: 48, thumb: 44,
   cityScene: {
     hero: { width: 390, height: 344 },
-    card: { width: 156, height: 196 },
+    card: { width: 220, height: 276 },
     thumb: { width: 56, height: 56 },
   },
 } as const;

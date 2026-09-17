@@ -101,12 +101,15 @@ export default function Home() {
                     dateFormat={dateFormat} topInset={insets.top} onPress={() => openTrip(heroTrip)}
                     onSettings={() => router.push('/settings')} />
                 ) : null}
-                <SectionHeader title="다가오는 여행" />
+                <NewTripCard onPress={() => router.push('/create')} />
+                <SectionHeader title="내 여행" />
                 <FlatList horizontal data={upcoming} keyExtractor={(trip) => trip.id} showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={s.carousel} ListHeaderComponent={<NewTripCard onPress={() => router.push('/create')} />}
+                  contentContainerStyle={s.carousel}
+                  ListEmptyComponent={<Text style={s.carouselEmpty}>다른 여행이 없어요.</Text>}
                   renderItem={({ item, index }) => (
                     <SceneCard trip={item} onPress={() => openTrip(item)}
                       label={index < alsoOngoing.length ? `${tripDayNumber(item.startDate, today)}일차` : ddayLabel(item.startDate, today)}
+                      tone={index < alsoOngoing.length ? 'accent' : 'dark'}
                       meta={`${tripLength(item.startDate, item.endDate)}${placeCounts.get(item.id) ? ` · ${placeCounts.get(item.id)}곳` : ''}`} />
                   )} />
                 <SectionHeader title="지난 여행" meta={buckets.past.length ? String(buckets.past.length) : undefined} />
@@ -136,7 +139,7 @@ function Hero({ trip, label, dateFormat, topInset, onPress, onSettings }: {
   trip: Trip; label: string; dateFormat: DateFormat; topInset: number; onPress: () => void; onSettings: () => void;
 }) {
   return (
-    <View style={[s.hero, { marginTop: topInset + spacing.xs }]}>
+    <View style={s.hero}>
       <Pressable onPress={onPress} accessibilityRole="button" style={StyleSheet.absoluteFill}>
         <CityScene slot="hero" cityName={trip.cityName} />
         <View style={s.heroScrim} />
@@ -148,7 +151,7 @@ function Hero({ trip, label, dateFormat, topInset, onPress, onSettings }: {
           </Text>
         </View>
       </Pressable>
-      <View style={s.heroSettings}>
+      <View style={[s.heroSettings, { top: topInset + spacing.xs }]}>
         <IconButton icon="settings" label="앱 설정" onPress={onSettings} floating />
       </View>
     </View>
@@ -157,20 +160,24 @@ function Hero({ trip, label, dateFormat, topInset, onPress, onSettings }: {
 
 function NewTripCard({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s.newCard, pressed && s.pressed]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="여행 일정짜기, 도시와 날짜만 정하면 끝"
+      style={({ pressed }) => [s.newCard, pressed && s.pressed]}>
       <View style={s.newIcon}><Icon name="plus" size={sizing.iconMd} color={colors.onPrimary} /></View>
-      <Text style={s.newTitle} numberOfLines={1}>여행 일정짜기</Text>
-      <Text style={s.newMeta} numberOfLines={1}>도시와 날짜만 정하면 끝</Text>
+      <View style={s.newCopy}>
+        <Text style={s.newTitle} numberOfLines={1}>여행 일정짜기</Text>
+        <Text style={s.newMeta} numberOfLines={1}>도시와 날짜만 정하면 끝</Text>
+      </View>
+      <Icon name="chevron-right" size={sizing.iconMd} color={colors.mutedSoft} />
     </Pressable>
   );
 }
 
-function SceneCard({ trip, label, meta, onPress }: { trip: Trip; label: string; meta: string; onPress: () => void }) {
+function SceneCard({ trip, label, tone, meta, onPress }: { trip: Trip; label: string; tone: 'accent' | 'dark'; meta: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s.sceneCard, pressed && s.pressed]}>
       <CityScene slot="card" cityName={trip.cityName} />
       <View style={s.cardScrim} />
-      <View style={s.cardBadge}><Badge label={label} tone="dark" /></View>
+      <View style={s.cardBadge}><Badge label={label} tone={tone} /></View>
       <View style={s.cardCopy}>
         <Text style={s.cardTitle} numberOfLines={1}>{trip.title}</Text>
         <Text style={s.cardMeta} numberOfLines={1}>{meta}</Text>
@@ -188,13 +195,14 @@ const s = StyleSheet.create({
   },
   heroScrim: {
     position: 'absolute', left: 0, right: 0, bottom: 0, height: 160,
-    experimental_backgroundImage: 'linear-gradient(0deg, rgba(10,26,26,0.72) 0%, rgba(10,26,26,0.5) 30%, rgba(10,26,26,0.16) 65%, rgba(10,26,26,0) 100%)',
+    experimental_backgroundImage: 'linear-gradient(0deg, rgba(10,26,26,0.78) 0%, rgba(10,26,26,0.58) 22%, rgba(10,26,26,0.2) 50%, rgba(10,26,26,0.03) 78%, rgba(10,26,26,0) 100%)',
   },
   heroCopy: { position: 'absolute', left: spacing.gutter, right: spacing.gutter, bottom: spacing.lg, gap: spacing.xxs, alignItems: 'flex-start' },
   heroTitle: { ...t.displayMd, color: colors.onDark },
-  heroMeta: { ...t.caption, color: 'rgba(255,255,255,0.78)' },
-  heroSettings: { position: 'absolute', top: spacing.sm, right: spacing.sm },
+  heroMeta: { ...t.caption, color: 'rgba(255,255,255,0.9)' },
+  heroSettings: { position: 'absolute', right: spacing.sm },
   carousel: { paddingHorizontal: spacing.gutter, gap: spacing.sm },
+  carouselEmpty: { ...t.bodySm, color: colors.muted, paddingVertical: spacing.md },
   sceneCard: {
     width: illustration.cityScene.card.width, height: illustration.cityScene.card.height,
     borderRadius: rounded.lg, overflow: 'hidden',
@@ -209,15 +217,17 @@ const s = StyleSheet.create({
   cardTitle: { ...t.titleMd, color: colors.onDark },
   cardMeta: { ...t.caption, color: 'rgba(255,255,255,0.78)' },
   newCard: {
-    width: illustration.cityScene.card.width, height: illustration.cityScene.card.height,
+    minHeight: 56, marginTop: spacing.md, marginHorizontal: spacing.gutter,
     borderRadius: rounded.lg, backgroundColor: colors.surfaceCard,
     borderWidth: sizing.hairline, borderColor: colors.hairline,
-    padding: spacing.sm, justifyContent: 'flex-end', gap: 2,
+    paddingVertical: spacing.xs, paddingHorizontal: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
   },
   newIcon: {
     width: sizing.controlHSm, height: sizing.controlHSm, borderRadius: rounded.pill,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs,
+    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
   },
+  newCopy: { flex: 1, gap: 2 },
   newTitle: { ...t.titleMd, color: colors.ink },
   newMeta: { ...t.caption, color: colors.muted },
   sectionEmpty: { ...t.bodySm, color: colors.muted, paddingHorizontal: spacing.gutter, paddingVertical: spacing.md },

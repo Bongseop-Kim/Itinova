@@ -269,17 +269,17 @@ components:
     paddingTop: "{spacing.lg}"
     paddingBottom: "{spacing.xs}"
   trip-card:
-    # S01 다가오는 여행 가로 씬 카드.
+    # S01 `내 여행` 가로 씬 카드. 폭은 화면의 ~56% — 다음 카드가 걸쳐 보여 캐러셀임이 드러난다.
     textColor: "{colors.on-dark}"
     borderRadius: "{rounded.lg}"
-    size: [156, 196]
+    size: [220, 276]
     titleTypography: "{typography.title-md}"
     metaTypography: "{typography.caption}"
     metaColor: rgba(255,255,255,0.78)
   city-scene:
     slots:
       hero: [390, 344]
-      card: [156, 196]
+      card: [220, 276]
       thumb: [56, 56]
     fallbackColors: ["{colors.brand-peach}", "{colors.brand-ochre}", "{colors.brand-mint}", "{colors.brand-lavender}", "{colors.brand-coral}"]
   trip-card-active:
@@ -821,7 +821,7 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 - 카테고리: attraction · food · cafe · stay · transport · etc
 - 생성 방식: manual · ai
 - 도구: weather · time · fx · translate
-- 도시 씬: 서울 · 부산 · 제주 · 강릉 · 여수 · 경주 · 전주 · 속초 · 도쿄 · 오사카 · 후쿠오카 · 타이베이 · 방콕 · 다낭 · 싱가포르 · 파리. hero 390×344 · card 156×196 · thumb 56×56
+- 도시 씬: 서울 · 부산 · 제주 · 강릉 · 여수 · 경주 · 전주 · 속초 · 도쿄 · 오사카 · 후쿠오카 · 타이베이 · 방콕 · 다낭 · 싱가포르 · 파리. hero 390×344 · card 220×276 · thumb 56×56
 - 앱 마크: 코랄 핀 + 크림 경로. 2026-09-16 사용자 승인 후 앱 아이콘·스플래시·Android foreground에 반영했다.
 
 **스타일 계약:** 무광 클레이와 미세한 손자국, 인물 없이 소품만 사용한다. 좌상단 부드러운 조명과 살짝 위에서 본 3/4 시점을 맞춘다. peach · ochre · mint · lavender 중심에 coral 포인트, 크림은 밝은 면에만 쓴다. 단일 소품은 투명 배경이고, 도시 씬은 크림 배경과 낮은 바닥 면을 허용한다.
