@@ -57,6 +57,9 @@ export function datesBetween(start: string, end: string): string[] {
   return out;
 }
 
+/** 진행중 여행이 오늘 며칠째인지. 1-based — 시작일이 1일차다. */
+export const tripDayNumber = (start: string, today: string) => dayDiff(start, today) + 1;
+
 /** 하단 CTA 요약. 같은 날이면 당일치기. */
 export function tripLength(start: string, end: string): string {
   const nights = dayDiff(start, end);

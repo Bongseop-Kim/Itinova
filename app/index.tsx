@@ -4,14 +4,15 @@ import { useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { ClayFigure } from '../components/ClayFigure';
+import { Icon } from '../components/Icon';
 import { Badge, BottomCtaBar, ScreenHeader, SectionHeader, Tabs } from '../components/ui';
 import { db } from '../db';
 import { appSettings, trips } from '../db/schema';
 import { DATE_FORMAT, ONBOARDED, settingsQuery } from '../db/settings';
-import { todayISO, tripLength } from '../lib/calendar';
-import { dateRangeLabel, dayMeta, ddayLabel, tripBucket, type Bucket, type DateFormat } from '../lib/date';
+import { todayISO, tripDayNumber, tripLength } from '../lib/calendar';
+import { dateRangeLabel, ddayLabel, tripBucket, weekdayLabel, type Bucket, type DateFormat } from '../lib/date';
 import { useDbQuery } from '../lib/useDbQuery';
-import { colors, illustration, elevation, rounded, spacing, type as t } from '../theme';
+import { colors, illustration, elevation, rounded, sizing, spacing, type as t } from '../theme';
 
 type Trip = { id: string; title: string; startDate: string; endDate: string; cityName: string };
 const TABS = ['다가오는', '지난'] as const;
@@ -63,6 +64,9 @@ export default function Home() {
     return [...byYear].map(([year, data]) => ({ title: `${year}년`, data }));
   }, [buckets, tab]);
 
+  // 채도 카드는 화면당 한 장 (design-system §Do). 겹친 나머지 진행중 여행은 크림 카드로 내린다
+  const [activeTrip, ...alsoOngoing] = buckets.ongoing;
+
   const empty = !rows?.length;
 
   if (!settings) return <View style={s.screen} />;
@@ -71,7 +75,8 @@ export default function Home() {
   return (
     <View style={s.screen}>
       <ScreenHeader
-        title="Itinova"
+        title="내 여행"
+        overline={weekdayLabel(today)}
         largeTitle
         back={false}
         actions={[{ icon: 'settings', label: '앱 설정', onPress: () => router.push('/settings') }]}
@@ -93,13 +98,21 @@ export default function Home() {
           stickySectionHeadersEnabled={false}
           ListHeaderComponent={
             <View style={s.listHeader}>
-              {buckets.ongoing.map((trip) => (
+              {activeTrip ? (
                 <ActiveTripCard
+                  trip={activeTrip}
+                  today={today}
+                  onPress={() => router.push(`/trip/${activeTrip.id}/itinerary`)}
+                  dateFormat={dateFormat}
+                />
+              ) : null}
+              {alsoOngoing.map((trip) => (
+                <TripCard
                   key={trip.id}
                   trip={trip}
-                  today={today}
-                  onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
+                  label="여행 중"
                   dateFormat={dateFormat}
+                  onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
                 />
               ))}
               <Tabs
@@ -114,28 +127,12 @@ export default function Home() {
           }
           renderSectionHeader={({ section }) => <SectionHeader title={section.title} />}
           renderItem={({ item: trip }) => (
-            <View style={s.cardWrap}>
-              {/* 연도는 섹션 헤더가 이미 말한다 — 행 라벨은 월/일만 */}
-              <Text style={s.dateLabel}>{dayMeta(trip.startDate, 'md')}</Text>
-              <Pressable
-                onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
-                accessibilityRole="button"
-                style={({ pressed }) => [s.card, pressed && s.cardPressed]}
-              >
-                <View style={s.cardTop}>
-                  <Badge label={tab === '다가오는' ? ddayLabel(trip.startDate, today) : '지난 여행'} />
-                  <Text style={s.cardCity} numberOfLines={1}>
-                    {trip.cityName}
-                  </Text>
-                </View>
-                <Text style={s.cardTitle} numberOfLines={1}>
-                  {trip.title}
-                </Text>
-                <Text style={s.cardMeta}>
-                  {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} · {tripLength(trip.startDate, trip.endDate)}
-                </Text>
-              </Pressable>
-            </View>
+            <TripCard
+              trip={trip}
+              label={tab === '다가오는' ? ddayLabel(trip.startDate, today) : '지난 여행'}
+              dateFormat={dateFormat}
+              onPress={() => router.push(`/trip/${trip.id}/itinerary`)}
+            />
           )}
           ListEmptyComponent={
             <Text style={s.tabEmpty}>{tab === '다가오는' ? '다가오는 여행이 없어요.' : '지난 여행이 없어요.'}</Text>
@@ -144,6 +141,37 @@ export default function Home() {
       )}
 
       <BottomCtaBar label="여행 일정짜기" onPress={() => router.push('/create')} />
+    </View>
+  );
+}
+
+function TripCard({
+  trip,
+  label,
+  dateFormat,
+  onPress,
+}: {
+  trip: Trip;
+  label: string;
+  dateFormat: DateFormat;
+  onPress: () => void;
+}) {
+  return (
+    <View style={s.cardWrap}>
+      <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s.card, pressed && s.cardPressed]}>
+        <View style={s.cardTop}>
+          <Badge label={label} />
+          <Text style={s.cardCity} numberOfLines={1}>
+            {trip.cityName}
+          </Text>
+        </View>
+        <Text style={s.cardTitle} numberOfLines={1}>
+          {trip.title}
+        </Text>
+        <Text style={s.cardMeta}>
+          {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} · {tripLength(trip.startDate, trip.endDate)}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -162,11 +190,15 @@ function ActiveTripCard({
 }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={s.activeCard}>
-      <Badge label="여행 중" tone="accent" />
-      <Text style={s.activeTitle}>{trip.title}</Text>
-      <Text style={s.activeMeta}>
-        {trip.cityName} · {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} · {ddayLabel(trip.startDate, today)}
-      </Text>
+      <View style={s.activeBody}>
+        <Badge label={`여행 중 · ${tripDayNumber(trip.startDate, today)}일차`} tone="accent" />
+        <Text style={s.activeTitle}>{trip.title}</Text>
+        <Text style={s.activeMeta}>
+          {trip.cityName} · {dateRangeLabel(trip.startDate, trip.endDate, dateFormat)} ·{' '}
+          {tripLength(trip.startDate, trip.endDate)}
+        </Text>
+      </View>
+      <Icon name="chevron-right" size={sizing.iconMd} color={colors.onDarkSoft} />
     </Pressable>
   );
 }
@@ -181,15 +213,16 @@ const s = StyleSheet.create({
     backgroundColor: colors.brandTeal,
     borderRadius: rounded.xl,
     padding: spacing.lg,
-    gap: spacing.xxs,
     marginHorizontal: spacing.gutter,
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
+  activeBody: { flex: 1, gap: spacing.xxs, alignItems: 'flex-start' },
   activeTitle: { ...t.displaySm, color: colors.onDark, paddingTop: spacing.xxs },
   activeMeta: { ...t.caption, color: colors.onDarkSoft },
 
-  cardWrap: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.sm, gap: spacing.xxs },
-  dateLabel: { ...t.caption, color: colors.muted },
+  cardWrap: { paddingHorizontal: spacing.gutter, paddingBottom: spacing.sm },
   card: {
     backgroundColor: colors.surfaceCard,
     borderRadius: rounded.lg,

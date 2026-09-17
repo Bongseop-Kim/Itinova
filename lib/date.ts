@@ -21,6 +21,12 @@ export function dateRangeLabel(start: string, end: string, format: DateFormat = 
   return `${dateLabel(start, format)} ~ ${dateLabel(end, format)}`;
 }
 
+/** S01 홈 헤더 오버라인. '2026-09-17' → '9월 17일 수요일'. */
+export function weekdayLabel(date: string): string {
+  const { m, d, js } = parse(date);
+  return `${m}월 ${d}일 ${WEEKDAYS[js.getDay()]}요일`;
+}
+
 /** S10 일차 헤더. */
 export function dayMeta(date: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
   const { js } = parse(date);

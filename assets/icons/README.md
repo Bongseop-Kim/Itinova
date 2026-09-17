@@ -1,6 +1,6 @@
 # 앱 아이콘
 
-Designbase APP UI Template v1.6.0(유료 구매)에서 2026-09-16 추출. 원본 색인은 `docs/references/designbase-app-ui/icons/index.json`, 재추출은 같은 폴더 `tools/extract_icons.py`.
+Designbase APP UI Template v1.6.0(유료 구매)에서 2026-09-16 추출. 원본 색인과 재추출 스크립트(`icons/index.json`, `tools/extract_icons.py`)는 `docs/references/`에 있었으나 2026-09-17에 저장소에서 지웠다 — `git checkout 81ac2da -- docs/references/designbase-app-ui` 로 꺼낸다. 템플릿 원본은 사용자 로컬 pen.dev 문서다.
 24×24 단색 SVG(`currentColor`). `components/Icon.tsx`가 `expo-image` `tintColor`로 그린다. **다른 아이콘 팩을 섞지 않는다.**
 
 | 앱 이름 | 원본 |

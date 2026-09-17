@@ -4,8 +4,8 @@ import { convertAmount, parseRate, parseWeather, timeDifference, tripForecast, w
 // node lib/check.ts — 프레임워크 없는 자체 점검. RN 을 import 하지 않는 순수 로직만 다룬다.
 import { dashedRoutes, directionsUrl, mapCamera, mapData, validCoord, validTime } from './map.ts';
 import { BACKUP_FORMAT, parseBackup, planImport, type TripPayload } from './backup.ts';
-import { cellState, datesBetween, dayDiff, monthGrid, months, pickDate, toISO, tripLength } from './calendar.ts';
-import { dateLabel, dateRangeLabel, dayMeta, daysUntil, ddayLabel, tripBucket } from './date.ts';
+import { cellState, datesBetween, dayDiff, monthGrid, months, pickDate, toISO, tripDayNumber, tripLength } from './calendar.ts';
+import { dateLabel, dateRangeLabel, dayMeta, daysUntil, ddayLabel, tripBucket, weekdayLabel } from './date.ts';
 import { formatAmount, groupByCategory, groupByDay as groupExpensesByDay, sumByCurrency, type Expense } from './expense.ts';
 import { formatKm, haversineKm } from './geo.ts';
 import { groupByDay, type JoinedRow } from './itinerary.ts';
@@ -52,6 +52,12 @@ eq(dateRangeLabel('2026-09-09', '2026-09-11', 'md'), '9/9 ~ 9/11');
 eq(dayMeta('2026-09-09'), '2026.9.9/수');
 eq(dayMeta('2026-09-11', 'md'), '9/11/금');
 eq(dayMeta('2026-01-01'), '2026.1.1/목', '한 자리 월도 앞자리 0 없이');
+eq(weekdayLabel('2026-09-17'), '9월 17일 목요일', 'S01 헤더 오버라인');
+eq(weekdayLabel('2026-01-01'), '1월 1일 목요일');
+
+// 진행중 여행의 "N일차" — 시작일이 1일차다 (S01 진행중 카드)
+eq(tripDayNumber('2026-09-09', '2026-09-09'), 1, '시작일은 1일차');
+eq(tripDayNumber('2026-09-09', '2026-09-11'), 3);
 
 const today = new Date();
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

@@ -16,7 +16,7 @@
 - S09 추천 캐러셀(플랜 10-7)은 이 플랜의 장소 카드 컴포넌트를 재사용한다.
 
 ## 실행 조건
-- 헤더·입력·칩·시트·탭은 `components/ui/`의 공용 컴포넌트를 쓴다(2026-09-16 플랜 12로 도입). 새로 만들지 않는다. 채팅 화면 배치는 `docs/references/designbase-app-ui/screens/ai-chat.png`·`ai-chat-active.png`를 참고한다.
+- 헤더·입력·칩·시트·탭은 `components/ui/`의 공용 컴포넌트를 쓴다(2026-09-16 플랜 12로 도입). 새로 만들지 않는다. 채팅 화면 배치의 원 레퍼런스는 Designbase 템플릿의 `생성형 AI 채팅` 프레임(모델명 드롭다운 헤더, 아이콘 칩 빠른 시작, 첨부·마이크 컴포저)이었다. **이미지는 2026-09-17에 저장소에서 지웠다** — 필요하면 `git checkout 81ac2da -- docs/references/designbase-app-ui/screens` 로 꺼낸다.
 
 
 - 플랜 07 `chat` 200, 플랜 08 `lib/aiResolve.ts` 존재. iOS 개발 빌드.

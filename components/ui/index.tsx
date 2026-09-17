@@ -1,5 +1,5 @@
 // docs/design-system.md 의 컴포넌트 토큰을 그대로 옮긴 조각들. 값은 theme.ts 에서만 온다 — 화면에서 hex 를 인라인하지 않는다.
-// 템플릿(Designbase, docs/references/designbase-app-ui) 구조를 따르고 색은 우리 토큰을 유지한다 (플랜 12).
+// 템플릿(Designbase APP UI Template v1.6.0) 구조를 따르고 색은 우리 토큰을 유지한다 (플랜 12).
 import type { Link } from 'expo-router';
 import { StyleSheet, Text } from 'react-native';
 

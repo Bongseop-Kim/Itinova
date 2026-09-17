@@ -859,4 +859,4 @@ pill/full은 `9999`. 정원이 필요한 곳(아바타, FAB, 순번 배지)은 `
 - **접근성 부분 검증.** 대비비는 실측했다(§ 대비). 터치 영역·스크린리더 라벨·Dynamic Type 실기기 확인은 남았다. 아이콘 버튼은 라벨이 유일한 설명이라 VoiceOver 확인이 특히 중요하다.
 
 아이콘 세트는 해소됐다: Designbase 템플릿(유료 구매)에서 24dp 단색 SVG를 `assets/icons/`로 가져왔고 `components/Icon.tsx`가 `expo-image`의 `tintColor`로 그린다.
-출처 표와 재추출 스크립트는 `assets/icons/README.md`와 `docs/references/designbase-app-ui/`에 있다. **다른 아이콘 팩을 섞지 않는다.**
+출처는 `assets/icons/README.md`에 있다. **다른 아이콘 팩을 섞지 않는다.**
