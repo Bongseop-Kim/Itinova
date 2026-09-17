@@ -49,7 +49,7 @@ ImageMagick `-colorspace RGB -resize SIZE -colorspace sRGB` → cwebp `-q 90 -al
 
 원본·중간 PNG는 `_src/`에 로컬 보관하고 버전 관리와 앱 번들에서 제외한다. 용량 예산 2MB는 **배포 파일 기준**이며 원본을 포함한 `du -sh assets/clay`에는 적용하지 않는다.
 
-도시 씬은 정사각 원본에서 `hero` 1170×1032, `card` 468×588, `thumb` 168×168로 중앙 크롭한다. 소품 2~3개와 낮은 바닥 면을 두고, 히어로 텍스트가 올라가는 하단 1/3은 비운다. 공통 스타일 계약의 재질·광원·팔레트는 유지하되 장면형 자산이므로 크림 배경과 바닥 면을 허용한다. `lib/cities.ts`의 16개 도시를 내장 ImageGen으로 각각 한 번 생성하고 세 슬롯으로 크롭했다. q90은 배포분이 2.4MB여서 q82로 낮췄고, 기존 자산을 합친 배포분은 1,637,862바이트다.
+도시 씬은 정사각 원본에서 `hero` 1170×1032, `card` 468×588, `thumb` 168×168로 중앙 크롭한다. 무광 클레이 재질과 카메라만 공통으로 두고, 도시마다 하늘·물·식생·시간대의 색을 다르게 만든다. 배경은 화면 끝까지 채우고 전경·중경·원경을 구성하며 하단도 비우지 않는다. 핵심 랜드마크는 세 크롭에 모두 남도록 중앙 70% 안에 둔다. 2026-09-17에 내장 ImageGen으로 16개 원본을 재생성했고, 상세한 장면을 2MB 배포 예산에 맞추기 위해 WebP q35로 압축했다. 기존 클레이를 합친 배포분은 2,006,940바이트다.
 
 
 투명 마크 편집 프롬프트: Extract this exact coral clay pin with cream curved arrow as a transparent PNG. Preserve silhouette, central hole, colors, texture, camera and proportions; remove only the cream background, including inside the hole. Clean alpha, no backdrop/shadow/checkerboard. 투명 결과를 860px로 선형 광 축소해 1024px 중앙에 놓고, 앱 아이콘에는 정확한 canvas #fffaf0를 합성했다. Android foreground는 이 투명 마크를 다시 760px로 줄여 1024px 가운데 놓았다.
